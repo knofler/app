@@ -1,0 +1,278 @@
+/* eslint-disable no-return-assign */
+/* eslint-disable func-names */
+/* eslint-disable react/no-string-refs */
+/* eslint-disable no-console */
+/* eslint-disable comma-dangle */
+
+/**
+ *
+ * {{properCase name }}
+ *
+ */
+
+import React from "react";
+import PropTypes from "prop-types";
+import { connect } from "react-redux";
+{{#if wantHeaders}}
+import { Helmet } from 'react-helmet';
+{{/if}}
+{{#if wantMessages}}
+import { FormattedMessage } from 'react-intl';
+{{/if}}
+
+{{#if wantActionsAndReducer}}
+import { createStructuredSelector } from "reselect";
+import {
+  // makeSelect{{properCase name }},
+  make{{properCase name }}GetPayloadSelector,
+  make{{properCase name }}PostPayloadSelector,
+  make{{properCase name }}ModelSelector,
+  make{{properCase name }}IdSelector,
+  make{{properCase name }}FormStructureSelector,
+  make{{properCase name }}InputSelector,
+  make{{properCase name }}FormItemResetSelector
+} from "./selectors";
+{{/if}}
+ {{#if wantMessages}}
+import messages from "./messages";
+{{/if}}
+
+/* eslint-disable react/prefer-stateless-function */
+export class {{properCase name }} extends React.Component {
+  constructor(props) {
+    super(props);
+    // Local component States
+    this.state = {
+      // render: "This is Default  Form Render Space"
+    };
+    // Binding Component specific methods
+    // this.FormAPICall = this.FormAPICall.bind(this);
+  }
+
+  {{#if wantSaga}}
+  componentDidMount() {
+    // On Component Mount, set the form structure and Model
+    this.props.{{ name }}Dispatch({
+      id: this.props.id,
+      model: this.props.model,
+      struct: this.props.formStructure
+    });
+
+    // make get api call to get the place holder object
+    this.props.{{ name }}DispatchGet({
+      id: this.props.id,
+      model: this.props.model
+    });
+  }
+  {{/if}}
+
+  // Form Handlechange event handlers
+  handleChange = (element, e) => {
+    e.preventDefault();
+    console.log(
+      "e.currentTarget.name:",
+      e.currentTarget.name,
+      "e.currentTarget.value",
+      e.currentTarget.value
+    );
+
+    // For form display input purpose
+    const userInput = {};
+    userInput[e.currentTarget.name] = e.currentTarget.value;
+
+    // updating each item of the form input and change the state, which on submit pushed to database to make change
+    this.props.{{ name }}GetPropsPayload[e.currentTarget.name] =
+      e.currentTarget.value;
+
+    // make input state change
+    setTimeout(() => {
+      this.props.{{ name }}DispatchSetFormState(userInput);
+      //   this.props.{{ name }}DispatchSetFormState(userInput);
+    }, 10);
+  };
+
+  //  Form Methods
+  {{ name }}FormAPICall = (id, e) => {
+    e.preventDefault();
+    console.log(" Form Data Method is invoked");
+    console.log("{{properCase name }} received id is ", id);
+    setTimeout(() => {
+      // console.log("userInput in  is :", userInput);
+      console.log(
+        "After input setInput {{ upperCase name}}_STATE__INPUT in FormApi Func is  :",
+        this.props.{{ name }}PropsInput
+      );
+      // Make API call
+      this.props.{{ name }}DispatchPost({
+        id: this.props.id,
+        model: this.props.model,
+        input: this.props.{{ name }}GetPropsPayload
+      });
+      // clear the local form
+      this.refs.form.reset();
+      // clear {{ upperCase name}}_STATE__INPUT
+      // this.props.{{ name }}DispatchFormInputReset();
+    }, 200);
+  };
+
+  render() {
+
+    {{#if wantSaga}}
+     
+    {{/if}}
+
+    if (this.props.formStructure && this.props.deploy === true) {
+      return (
+        <div>
+          {{#if wantHeaders}}
+          <Helmet>
+            <title>{{properCase name }}</title>
+            <meta name="description" content="Description of {{properCase name }}" />
+          </Helmet>
+          {{/if}}
+          {{#if wantMessages}}
+          <FormattedMessage {...messages.header} />
+          {{/if}}
+          <div>
+            <div>
+              Injected Model is :::
+              <strong> {this.props.{{ name }}PropsModel}</strong>
+            </div>
+            <div>
+              Injected ID is :::
+              <strong> {this.props.{{ name }}PropsId} </strong>
+            </div>
+            <div>
+              <p>
+                Retrieved Field JSON Response :: <br />
+                <pre className="jsonResponseRed">
+                  {JSON.stringify(this.props.{{ name }}GetPropsPayload)}
+                </pre>
+              </p>
+            </div>
+            <div>
+              Form Structure Passed on ::
+              <pre>{JSON.stringify(this.props.{{ name }}PropsFormStructure)}</pre>
+            </div>
+            <div>
+              <p>
+                Submited Forms JSON Response :: <br />
+                <pre className="jsonResponse">
+                  {JSON.stringify(this.props.{{ name }}PostPropsPayload)}
+                </pre>
+              </p>
+            </div>
+            <div>
+              User Input is ::
+              <pre className="userInput">
+                {JSON.stringify(this.props.{{ name }}PropsInput)}
+              </pre>
+            </div>
+            <div>
+              Form Reset Status :::
+              <strong>
+                {" "}
+                {JSON.stringify(this.props.{{ name }}PropsFormReset)}
+              </strong>
+            </div>
+          </div>
+          {/* <Form
+                formStructure={this.props.formStructure}
+                submitFunc={this.FormAPICall}
+                ref={this.state.ref}
+              /> */}
+          {/* Display Form */}
+          <div>
+            <form
+              ref="form"
+              onSubmit={e => this.{{ name }}FormAPICall(this.props.id, e)}
+            >
+              {this.props.formStructure.map(element => (
+                <div>
+                  <label>{element.label}</label>
+                  <input
+                    type={element.type}
+                    name={element.name}
+                    // placeholder={this.props.{{ name }}GetPropsPayload[element.name]}
+                    value={this.props.{{ name }}GetPropsPayload[element.name]}
+                    onChange={e => this.handleChange(element.name, e)}
+                  />
+                </div>
+              ))}
+              <button type="submit">Submit</button>
+            </form>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div>
+        <Helmet>
+          <title>{{properCase name }}</title>
+          <meta name="description" content="Description of {{properCase name }}" />
+        </Helmet>
+        <FormattedMessage {...messages.header} />
+        <div>
+          <pre>{/* <code>{this.state.{{ name }}PropsPayload}</code> */}</pre>
+        </div>
+      </div>
+    );
+  }
+}
+
+{{properCase name }}.propTypes = {
+  // dispatch: PropTypes.func.isRequired,
+  id: PropTypes.string,
+  formStructure: PropTypes.array.isRequired,
+  model: PropTypes.string.isRequired,
+  deploy: PropTypes.bool.isRequired,
+  {{ name }}Dispatch: PropTypes.func,
+  {{ name }}DispatchGet: PropTypes.func,
+  {{ name }}DispatchPost: PropTypes.func,
+  {{ name }}DispatchFormStructure: PropTypes.func,
+  {{ name }}DispatchChangeModel: PropTypes.func,
+  {{ name }}DispatchFormInputReset: PropTypes.func,
+  {{ name }}DispatchSetFormState: PropTypes.func,
+  {{ name }}GetPropsPayload: PropTypes.object,
+  {{ name }}PostPropsPayload: PropTypes.object,
+  {{ name }}PropsInput: PropTypes.object,
+  {{ name }}PropsFormReset: PropTypes.bool
+};
+
+{{#if wantActionsAndReducer}}
+const mapStateToProps = createStructuredSelector({
+  // {{ name }}: makeSelect{{properCase name }}(),
+  {{ name }}GetPropsPayload: make{{properCase name }}GetPayloadSelector(),
+  {{ name }}PostPropsPayload: make{{properCase name }}PostPayloadSelector(),
+  {{ name }}PropsModel: make{{properCase name }}ModelSelector(),
+  {{ name }}PropsId: make{{properCase name }}IdSelector(),
+  {{ name }}PropsFormStructure: make{{properCase name }}FormStructureSelector(),
+  {{ name }}PropsInput: make{{properCase name }}InputSelector(),
+  {{ name }}PropsFormReset: make{{properCase name }}FormItemResetSelector()
+});
+{{/if}}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    // dispatch,
+    {{ name }}Dispatch: ({ id, struct, model }) =>
+      dispatch({{ name }}Action({ id, struct, model })),
+    {{ name }}DispatchGet: ({ id, model }) =>
+      dispatch({{ name }}ActionGet({ id, model })),
+    {{ name }}DispatchPost: ({ id, input, model }) =>
+      dispatch({{ name }}ActionPost({ id, input, model })),
+    {{ name }}DispatchSetFormState: input =>
+      dispatch({{ name }}ActionSetFormState(input)),
+    {{ name }}DispatchFormInputReset: () => dispatch({{ name }}ActionFormInputReset()),
+    {{ name }}DispatchFormStructure: ({ data }) =>
+      dispatch({{ name }}ActionFormStructure({ data })),
+    {{ name }}DispatchChangeModel: ({ model }) =>
+      dispatch({{ name }}ActionChangeModel({ model }))
+  };
+}
+
+{{#if wantActionsAndReducer}}
+export default connect(mapStateToProps, mapDispatchToProps)({{ properCase name }});
+{{else}}
+export default connect(null, mapDispatchToProps)({{ properCase name }});
+{{/if}}

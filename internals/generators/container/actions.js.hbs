@@ -1,0 +1,60 @@
+/*
+*
+* {{ upperCase name }} actions
+*
+*/
+
+import {
+DEFAULT_ACTION,
+{{ upperCase name }}_CONST_APIDATA,
+{{ upperCase name }}_CONST_APIDATA_SUCCESS,
+{{ upperCase name }}_CONST_APIDATA_ERROR,
+} from "./constants";
+
+/*
+*
+* DEFAULT actions {{upperCase name}}
+*
+*/
+
+export function defaultAction() {
+  return {
+    type: DEFAULT_ACTION
+  };
+ }
+
+/*
+*
+* API DATA ACTIONS for {{upperCase name}}
+*
+*/
+
+export function {{name}}ActionApiData(tenantId, skip, take) {
+    console.log("in {{name}}ActionApiData Action", tenantId);
+  return {
+    type: {{ upperCase name }}_CONST_APIDATA,
+    tenantId,
+    skip,
+    take
+  };
+}
+
+export function {{name}}ActionApiDataError(error) {
+  return {
+    type: {{upperCase name }}_CONST_APIDATA_ERROR,
+    error
+  };
+}
+
+export function {{name}}ActionApiDataSuccess(apiData) {
+  console.log(
+  "payload received from API yeild in {{name}}ActionApiData function in action is",
+  apiData
+  );
+  return {
+    type: {{upperCase name }}_CONST_APIDATA_SUCCESS,
+    apiData
+  };
+}
+
+

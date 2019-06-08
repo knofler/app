@@ -1,0 +1,41 @@
+/*
+*
+* {{ upperCase name }} selectors
+*
+*/
+
+import { createSelector } from 'reselect';
+import { initialState } from './reducer';
+
+/**
+ * Direct selector to the {{ camelCase name }} state domain
+ */
+
+const select{{ properCase name }}Domain = state =>
+  state.get('{{ camelCase name }}', initialState);
+
+/**
+ * Other specific selectors
+ */
+
+const make{{ properCase name }}ApiDataSelector = () => {
+  return createSelector(select{{ properCase name }}Domain, substate => {
+    console.log("{{ upperCase name }}_STATE_APIDATA in selector",
+      substate.get("{{ upperCase name }}_STATE_APIDATA"));
+    return substate.get("{{ upperCase name }}_STATE_APIDATA");
+  });
+};
+
+
+/**
+ * Default selector used by {{ properCase name }}
+ */
+
+const makeSelect{{ properCase name }} = () =>
+  createSelector(select{{ properCase name }}Domain, substate => substate.toJS());
+
+export default makeSelect{{ properCase name }};
+export { 
+  select{{ properCase name }}Domain,
+  make{{ properCase name }}ApiDataSelector
+   };

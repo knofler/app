@@ -1,0 +1,128 @@
+/*
+*
+* {{ properCase name }} actions
+*
+*/
+
+import {
+DEFAULT_ACTION,
+LOAD_{{ properCase name }}_API_DATA,
+LOAD_{{ properCase name }}_API_DATA_ERROR,
+LOAD_{{ properCase name }}_API_DATA_SUCCESS,
+LOAD_{{ properCase name }}_EVENTS,
+LOAD_{{ properCase name }}_EVENTS_ERROR,
+LOAD_{{ properCase name }}_EVENTS_SUCCESS,
+LOAD_{{ properCase name }}_FEATURED_EVENTS,
+LOAD_{{ properCase name }}_FEATURED_EVENTS_ERROR,
+LOAD_{{ properCase name }}_FEATURED_EVENTS_SUCCESS
+} from "./constants";
+
+/*
+*
+* DEFAULT actions {{properCase name}}
+*
+*/
+
+export function defaultAction() {
+  return {
+    type: DEFAULT_ACTION
+  };
+ }
+
+/*
+*
+* API DATA ACTIONS for {{properCase name}}
+*
+*/
+
+export function load{{properCase name}}ApiData(tenantId, skip, take) {
+  console.log("in LoadApiData Action", tenantId);
+  return {
+    type: LOAD_{{properCase name}}_API_DATA,
+    tenantId,
+    skip,
+    take
+  };
+}
+
+export function load{{properCase name}}ApiDataError(error) {
+  return {
+    type: LOAD_{{properCase name }}_API_DATA_ERROR,
+    error
+  };
+}
+
+export function load{{properCase name}}ApiDataSuccess(apiDataEvents) {
+  console.log(
+  "payload received from API yeild in loadApiDataSuccess function in action is",apiDataEvents
+  );
+  return {
+    type: LOAD_{{properCase name }}_API_DATA_SUCCESS,
+    apiDataEvents
+  };
+}
+
+
+/*
+*
+* EVENTS ACTIONS for {{properCase name}}
+*
+*/
+
+export function load{{properCase name}}Events(tenantId, skip, take, searchTerm) {
+  console.log("in LoadEvents Action", tenantId);
+  return {
+    type: LOAD_{{properCase name}}_EVENTS,
+    tenantId,
+    skip,
+    take,
+    searchTerm,
+  };
+}
+
+export function load{{properCase name}}EventsError(error) {
+  return {
+    type: LOAD_{{properCase name}}_EVENTS_ERROR,
+    error,
+  };
+}
+
+export function load{{properCase name}}EventsSuccess(events) {
+  return {
+    type: LOAD_{{properCase name}}_EVENTS_SUCCESS,
+    events,
+  };
+}
+
+/*
+*
+* EVENTS ACTIONS for {{properCase name}}
+*
+*/
+
+
+
+export function load{{properCase name}}FeaturedEvents(tenantId, skip, take) {
+  console.log("in loadFeaturedEvents Action", tenantId);
+  return {
+    type: LOAD_{{properCase name}}_FEATURED_EVENTS,
+    tenantId,
+    skip,
+    take,
+  };
+}
+
+export function load{{properCase name}}FeaturedEventsError(featuredError) {
+  return {
+    type: LOAD_{{properCase name}}_FEATURED_EVENTS_ERROR,
+    featuredError,
+  };
+}
+
+export function load{{properCase name}}FeaturedEventsSuccess(featuredEvents) {
+  console.log("payload received from featuredEvents yeild is", featuredEvents);
+  return {
+    type: LOAD_{{properCase name}}_FEATURED_EVENTS_SUCCESS,
+    featuredEvents,
+  };
+}

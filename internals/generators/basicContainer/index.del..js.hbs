@@ -1,0 +1,93 @@
+/*
+ *
+ * {{properCase name }}
+ *
+ */
+
+import React from 'react';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+{{#if wantHeaders}}
+import { Helmet } from 'react-helmet';
+{{/if}}
+{{#if wantMessages}}
+import { FormattedMessage } from 'react-intl';
+{{/if}}
+{{#if wantActionsAndReducer}}
+import { createStructuredSelector } from 'reselect';
+import {
+  makeSelect{{properCase name}},
+  make{{properCase name }}ApiDataSelector,
+  make{{properCase name}}EventsSelector,
+  make{{properCase name}}FeaturedEventSelector
+ } from './selectors';
+{{/if}}
+{{#if wantMessages}}
+import messages from './messages';
+{{/if}}
+
+/* eslint-disable react/prefer-stateless-function */
+export class {{ properCase name }} extends React.{{{ component }}} {
+  render() {
+    return (
+      <div>
+      {{#if wantHeaders}}
+        <Helmet>
+          <title>{{properCase name}}</title>
+          <meta
+            name="description"
+            content="Description of {{properCase name}}"
+          />
+        </Helmet>
+      {{/if}}
+      {{#if wantMessages}}
+        <FormattedMessage {...messages.header} />
+     
+      <div>
+        {this.props.apiDataEvents_{{ properCase name }}.map(each => (
+        <Card key={each.id} {...each} 
+          // click={this.clickHandler.bind(null, each.id)} />
+        ))}
+      </div>
+      {{/if}}
+      </div>
+    );
+  }
+}
+
+{{ properCase name }}.propTypes = {
+  dispatch: PropTypes.func.isRequired,
+  apiDataEvents_{{ properCase name }}: PropTypes.array,
+  loadApiData_{{ properCase name }}: PropTypes.func
+  events_{{ properCase name }}: PropTypes.array,
+  loadEvents_{{ properCase name }}: PropTypes.func,
+  featuredEvents_{{ properCase name }}: PropTypes.array,
+  loadFeaturedEvents_{{ properCase name }}: PropTypes.func
+};
+
+{{#if wantActionsAndReducer}}
+const mapStateToProps = createStructuredSelector({
+  {{camelCase name}}: makeSelect{{properCase name}}(),
+  events_{{ properCase name }}: make{{properCase name}}EventsSelector,
+  featuredEvents_{{ properCase name }}: make{{properCase name}}FeaturedEventSelector,
+  apiDataEvents_{{ properCase name }}: make{{ properCase name }}ApiDataSelector
+});
+{{/if}}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    dispatch,
+    load{{ properCase name }}ApiData: (tenantId, skip, take) =>
+      dispatch(loadApiData_{{ properCase name }}(tenantId, skip, take))
+    load{{properCase name}}Events: (tenantId, skip, take, searchTerm) =>
+      dispatch(loadEvents_{{ properCase name }}(tenantId, skip, take, searchTerm)),
+    load{{properCase name}}FeaturedEvents: (tenantId, skip, take) =>
+      dispatch(loadFeaturedEvents_{{ properCase name }}(tenantId, skip, take))
+  };
+}
+
+{{#if wantActionsAndReducer}}
+export default connect(mapStateToProps, mapDispatchToProps)({{ properCase name }});
+{{else}}
+export default connect(null, mapDispatchToProps)({{ properCase name }});
+{{/if}}

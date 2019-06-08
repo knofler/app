@@ -1,0 +1,390 @@
+/* eslint-disable no-console */
+
+/**
+ *
+ * {{properCase name }}
+ *
+ */
+
+import React from 'react';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+{{#if wantHeaders}}
+import { Helmet } from 'react-helmet';
+{{/if}}
+{{#if wantMessages}}
+import { FormattedMessage } from 'react-intl';
+{{/if}}
+{{#if wantActionsAndReducer}}
+import { createStructuredSelector } from 'reselect';
+{{/if}}
+import { compose } from 'redux';
+import Card from "components/Card";
+{{#if wantCRUD}}
+import Create from "containers/Create/Loadable";
+import Update from "containers/Update/Loadable";
+import Delete from "containers/Delete/Loadable";
+{{/if}}
+{{#if wantSearch}}
+import SearchBox from "components/SearchBox";
+{{/if}}      
+
+{{#if wantSaga}}
+import injectSaga from 'utils/injectSaga';
+{{/if}}
+{{#if wantActionsAndReducer}}
+import injectReducer from 'utils/injectReducer';
+{{#if wantSocket}}
+import { socket, subscribeToTimer } from "utils/socketio-client";
+{{/if}}
+import { 
+  {{ name }}ActionApiData,
+ } from "./actions";
+
+import {
+  makeSelect{{properCase name}},
+  make{{properCase name }}ApiDataSelector,
+ } from './selectors';
+import reducer from './reducer';
+{{/if}}
+{{#if wantSaga}}
+import saga from './saga';
+{{/if}}
+{{#if wantMessages}}
+import messages from './messages';
+{{/if}}
+{{#if wantDummyData}}
+import {{ properCase name }}Form from "./mocks/dummyData";
+{{/if}}
+import "./{{ properCase name }}.css";
+
+/* eslint-disable react/prefer-stateless-function */
+export class {{ properCase name }} extends {{{ type }}} {
+  constructor(props) {
+    super(props);
+    this.state = {
+      add: false,
+      update: false,
+      delete: false,
+      read: true,
+      model: "{{ model }}",
+      formStructure: {{ properCase name }}Form,
+      data: [],
+      {{#if wantSearch}}
+      searchTerm: "",
+      {{/if}}
+      id: "",
+      timestamp: "no timestamp yet"
+    };
+    subscribeToTimer((err, timestamp) =>
+      this.setState({
+        timestamp
+      })
+    );
+  }
+
+  {{#if wantSaga}}
+  componentDidMount() {
+    // load API Data
+    this.props.{{ name }}DispatchApiData({
+      model: this.state.model
+    });
+    {{#if wantSocket}}
+    socket.on("get_add_data", data => {
+      console.log("add data recieved", data);
+      this.props.{{ name }}DispatchApiData({
+        model: this.state.model
+      });
+    });
+    socket.on("save", data => {
+      console.log("On {{ name }}:save Add event, socket call", data);
+    });
+    socket.on("get_update_data", data => {
+      console.log("update data recieved", data);
+      this.props.{{ name }}DispatchApiData({
+        model: this.state.model
+      });
+    });
+    socket.on("get_delete_data", data => {
+      console.log("delete data recieved", data);
+      this.props.{{ name }}DispatchApiData({
+        model: this.state.model
+      });
+    });
+    {{/if}}
+  }
+
+  componentWillReceiveProps(nextProps) {
+    console.log("next CompWillReciProp Testprops", nextProps);
+    console.log(
+      "this CompWillReciProp Testprops",
+      this.props.{{ name }}PropsApiData
+    );
+    if (nextProps.{{ name }}PropsApiData !== this.props.{{ name }}PropsApiData) {
+      this.setState({
+        data: nextProps.{{ name }}PropsApiData
+      });
+    } else {
+      this.setState({
+        data: this.props.{{ name }}PropsApiData
+      });
+    }
+  }
+
+  {{/if}}
+
+/**
+*
+  * CRUD FUNCTIONS STATE CONTROL
+*
+*/
+  {{#if wantCRUD}}
+  addFormButton = e => {
+    e.preventDefault();
+    this.setState({
+      add: true,
+      read: false
+    });
+  };
+
+  clickUpdate = (id, e) => {
+    console.log("clickupdate being clicked");
+    e.preventDefault();
+    console.log("e is ", e);
+    console.log("id is ", id);
+    this.setState({
+      update: true,
+      read: false,
+      id
+    });
+  };
+
+  clickDelete = (id, e) => {
+    console.log("clicDelete being clicked");
+    e.preventDefault();
+    console.log("e is ", e);
+    console.log("id is ", id);
+    // alert("You sure you want to delete?");
+    this.setState({
+      delete: true,
+      read: false,
+      id
+    });
+    // console.log("Delete is :", <Delete />);
+  };
+  {{/if}}
+
+  {{#if wantSearch}}
+  searchFunc = e => {
+    this.setState({
+      searchTerm: e.target.value
+    });
+  };
+  {{/if}}
+
+  backButton = () => {
+    this.setState({
+      read: true,
+      add: false,
+      update: false,
+      delete: false,
+    });
+  };
+
+
+  render() {
+    {{#if wantCRUD}}
+    if (this.state.add) {
+      return (
+        <div>
+          {{#if wantHeaders}}
+          <Helmet>
+            <title>{{ properCase name }}</title>
+            <meta name="description" content="Description of {{ properCase name }}" />
+          </Helmet>
+          {{/if}}
+          {{#if wantMessages}}
+          <FormattedMessage {...messages.header} />
+          {{/if}}
+          <div>
+            <button 
+              className="btn btn-info"
+              type="button" 
+              onClick={this.backButton}>
+              Back
+            </button>
+          </div>
+          <Create
+            formStructure={ this.state.formStructure}
+            model={this.state.model}
+            deploy={this.state.add}
+          />
+        </div>
+      );
+    }
+    if (this.state.update) {
+      return (
+        <div>
+          {{#if wantHeaders}}
+          <Helmet>
+            <title>{{ properCase name }}</title>
+            <meta name="description" content="Description of {{ properCase name }}" />
+          </Helmet>
+          {{/if}}
+          {{#if wantMessages}}
+          <FormattedMessage {...messages.header} />
+          {{/if}}
+          <div>
+            <button 
+              className="btn btn-warning"
+              type="button" 
+              onClick={this.backButton}>
+              Back
+            </button>
+          </div>
+          <Update
+            id={this.state.id}
+            formStructure={this.state.formStructure}
+            model={this.state.model}
+            deploy={this.state.update}
+          />
+        </div>
+      );
+    }
+    if (this.state.delete) {
+      return (
+        <div>
+          <Helmet>
+            <title>Book</title>
+            <meta name="description" content="Description of Book" />
+          </Helmet>
+          <FormattedMessage {...messages.header} />
+          <div>
+            <button
+              className="btn btn-danger"
+              type="button"
+              onClick={this.backButton}
+            >
+              Back
+            </button>
+          </div>
+          <Delete 
+            id={this.state.id} 
+            model={this.state.model} 
+            deploy={this.state.delete} 
+          />
+        </div>
+      );
+    }
+    {{/if}}
+    if (this.state.read) {
+      return (
+        <div>
+          {{#if wantHeaders}}
+          <Helmet>
+            <title>{{ properCase name }}</title>
+            <meta name="description" content="Description of {{ properCase name }}" />
+          </Helmet>
+          {{/if}}
+          {{#if wantMessages}}
+          <FormattedMessage {...messages.header} />
+          {{/if}}
+          <div>
+            <button 
+              className="btn btn-primary"
+              type="button" 
+              onClick={e => this.addFormButton(e)}>
+              ADD Form
+            </button>
+          </div>
+          <div>
+            <p className="App-intro">
+              This is the timer value: {this.state.timestamp}
+            </p>
+          </div>
+
+          {{#if wantSearch}}
+            <div>
+              <SearchBox
+                searchFunc={e => {
+                  this.searchFunc(e);
+                }}
+                searchTerm={this.state.searchTerm}
+              />
+            </div>
+          {{/if}}
+
+          <div>
+            {this.state.data
+              {{#if wantSearch}}
+              .filter(
+                each =>
+                  `${each.item} 
+                   ${each.info}`
+                    .toUpperCase()
+                    .indexOf(this.state.searchTerm.toUpperCase()) >= 0
+              )
+              {{/if}}
+              .map((each, index) => (
+                <div>
+                  <Card
+                    key={each.id}
+                    {...each}
+                    id={index}
+                    clickEdit={e => this.clickUpdate(each.cuid, e)}
+                    clickDel={e => this.clickDelete(each.cuid, e)}
+                  />
+                </div>
+              ))}
+          </div>
+        </div>
+      );
+    }
+  }
+
+}
+
+{{ properCase name }}.propTypes = {
+  //dispatch: PropTypes.func.isRequired,
+  {{ name }}PropsApiData: PropTypes.array,
+  {{ name }}DispatchApiData: PropTypes.func,
+};
+
+{{#if wantActionsAndReducer}}
+const mapStateToProps = createStructuredSelector({
+  //{{ camelCase name }}: makeSelect{{properCase name}}(),
+  {{ name }}PropsApiData : make{{ properCase name }}ApiDataSelector()
+});
+{{/if}}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    // dispatch,
+    {{ name }}DispatchApiData: ({ model, id }) =>
+    dispatch({{ name }}ActionApiData({ model, id })),
+  };
+}
+
+{{#if wantActionsAndReducer}}
+const withConnect = connect(
+  mapStateToProps,
+  mapDispatchToProps
+);
+
+const withReducer = injectReducer({ key: '{{ camelCase name }}', reducer });
+{{else}}
+const withConnect = connect(null, mapDispatchToProps);
+{{/if}}
+{{#if wantSaga}}
+const withSaga = injectSaga({ key: '{{ camelCase name }}', saga });
+{{/if}}
+
+export default compose(
+{{#if wantActionsAndReducer}}
+  withReducer,
+{{/if}}
+{{#if wantSaga}}
+  withSaga,
+{{/if}}
+  withConnect
+)({{ properCase name }});

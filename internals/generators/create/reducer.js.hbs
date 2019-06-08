@@ -1,0 +1,116 @@
+/* eslint-disable no-return-assign */
+/* eslint-disable no-case-declarations */
+/* eslint-disable comma-dangle */
+/* eslint-disable no-console */
+/*
+ *
+ * {{ upperCase name }} reducer
+ *
+ */
+
+import { fromJS } from "immutable";
+import {
+  DEFAULT_ACTION,
+  {{ upperCase name }}_CONST_ADD,
+  {{ upperCase name }}_CONST_ADD_POST,
+  {{ upperCase name }}_CONST_ADD_ERROR,
+  {{ upperCase name }}_CONST_ADD_SUCCESS,
+  {{ upperCase name }}_CONST_ADD_FORM_INPUT,
+  {{ upperCase name }}_CONST_ADD_FORM_RESET
+} from "./constants";
+
+export const initialState = fromJS({
+  {{ upperCase name }}_STATE_ADD_PAYLOAD: {},
+  {{ upperCase name }}_STATE_ADD_SUCCESS: false,
+  {{ upperCase name }}_STATE_ADD_ERROR: false,
+  {{ upperCase name }}_STATE_ADD_MODEL: "N0_MODEL",
+  {{ upperCase name }}_STATE_ADD_INPUT: {},
+  {{ upperCase name }}_STATE_ADD_FORM_RESET: false,
+  {{ upperCase name }}_STATE_ADD_FORM_STRUCTURE: [],
+  {{ upperCase name }}_STATE_ADD_LOADING: false
+});
+
+function {{ name }}Reducer(state = initialState, action) {
+  console.log("Global reducer file being called");
+  switch (action.type) {
+    case DEFAULT_ACTION:
+      return state;
+    case {{ upperCase name }}_CONST_ADD:
+      console.log("in {{ upperCase name }}_CONST_ADD in REDUCER :: action::: ", action);
+      console.log(
+        "in {{ upperCase name }}_CONST_ADD in REDUCER :: action.struct ::: ",
+        action.struct
+      );
+      console.log(
+        "in {{ upperCase name }}_CONST_ADD in REDUCER :: action.model ::: ",
+        action.model
+      );
+      const userInput = {};
+      action.struct.map(each => (userInput[each.name] = ""));
+      return state
+        .set("{{ upperCase name }}_STATE_ADD_MODEL", action.model)
+        .set("{{ upperCase name }}_STATE_ADD_FORM_STRUCTURE", action.struct)
+        .set("{{ upperCase name }}_STATE_ADD_INPUT", userInput)
+        .set("{{ upperCase name }}_STATE_ADD_ERROR", false);
+    case {{ upperCase name }}_CONST_ADD_POST:
+      console.log("in {{ upperCase name }}_CONST_ADD_POST in REDUCER :: action::: ", action);
+      console.log(
+        "in {{ upperCase name }}_CONST_ADD in REDUCER :: action.input ::: ",
+        action.input
+      );
+      console.log(
+        "in {{ upperCase name }}_CONST_ADD in REDUCER :: action.model ::: ",
+        action.model
+      );
+      return state
+        .set("{{ upperCase name }}_STATE_ADD_MODEL", action.model)
+        .set("{{ upperCase name }}_STATE_ADD_INPUT", action.input)
+        .set("{{ upperCase name }}_STATE_ADD_LOADING", true)
+        .set("{{ upperCase name }}_STATE_ADD_ERROR", false);
+    case {{ upperCase name }}_CONST_ADD_ERROR:
+      console.log(
+        "in {{ upperCase name }}_CONST_ADD_ERROR in REDUCER,:: error ::: ",
+        action.error
+      );
+      return state
+        .set("{{ upperCase name }}_STATE_ADD_LOADING", false)
+        .set("{{ upperCase name }}_STATE_ADD_ERROR", action.error);
+    case {{ upperCase name }}_CONST_ADD_SUCCESS:
+      console.log(
+        "In {{ upperCase name }}_CONST_ADD_SUCCESS in REDUCER,:: payload :::",
+        action.payload
+      );
+      return state
+        .set("{{ upperCase name }}_STATE_ADD_LOADING", false)
+        .set("{{ upperCase name }}_STATE_ADD_ERROR", false)
+        .set("{{ upperCase name }}_STATE_ADD_SUCCESS", true)
+        .set("{{ upperCase name }}_STATE_ADD_PAYLOAD", action.payload);
+    case {{ upperCase name }}_CONST_ADD_FORM_INPUT:
+      console.log(
+        "in {{ upperCase name }}_CONST_ADD_FORM_INPUT in REDUCER :: action::: ",
+        action
+      );
+      console.log(
+        "in {{ upperCase name }}_CONST_ADD_FORM_INPUT in REDUCER :: action.input ::: ",
+        action.input
+      );
+      return state
+        .set("{{ upperCase name }}_STATE_ADD_INPUT", action.input)
+        .set("{{ upperCase name }}_STATE_ADD_LOADING", true)
+        .set("{{ upperCase name }}_STATE_ADD_ERROR", false);
+
+    case {{ upperCase name }}_CONST_ADD_FORM_RESET:
+      console.log(
+        "in {{ upperCase name }}_CONST_ADD_FORM_RESET in REDUCER :: action.event ::: ",
+        action
+      );
+      return state
+        .set("{{ upperCase name }}_STATE_ADD_INPUT", {})
+        .set("{{ upperCase name }}_STATE_ADD_FORM_RESET", true);
+
+    default:
+      return state;
+  }
+}
+
+export default {{ name }}Reducer;

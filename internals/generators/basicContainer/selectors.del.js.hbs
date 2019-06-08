@@ -1,0 +1,47 @@
+import { createSelector } from 'reselect';
+import { initialState } from './reducer';
+
+/**
+ * Direct selector to the {{ camelCase name }} state domain
+ */
+
+const select{{ properCase name }}Domain = state =>
+  state.get('{{ camelCase name }}', initialState);
+
+/**
+ * Other specific selectors
+ */
+
+const make{{ properCase name }}ApiDataSelector = () => {
+  return createSelector(select{{ properCase name }}Domain, substate => {
+    console.log("{{ properCase name }}_API_Data_Events in selector", substate.get("{{ properCase name }}_API_Data_Events"));
+    return substate.get("{{ properCase name }}_API_Data_Events");
+  });
+};
+
+const make{{properCase name}}EventsSelector = () =>
+  createSelector(select{{properCase name}}Domain, substate => substate.get("{{ properCase name }}_events"));
+
+
+const make{{properCase name}}FeaturedEventSelector = () => {
+  return createSelector(select{{ properCase name }}Domain, substate => {
+    console.log("featuredEvents in Dashboard selector",substate.get("{{ properCase name }}_featured_events"));
+    return substate.get("{{ properCase name }}_featured_events");
+  });
+};
+
+
+/**
+ * Default selector used by {{ properCase name }}
+ */
+
+const makeSelect{{ properCase name }} = () =>
+  createSelector(select{{ properCase name }}Domain, substate => substate.toJS());
+
+export default makeSelect{{ properCase name }};
+export { 
+  select{{ properCase name }}Domain,
+  make{{ properCase name }}ApiDataSelector,
+  make{{properCase name}}EventsSelector,
+  make{{properCase name}}FeaturedEventSelector
+   };

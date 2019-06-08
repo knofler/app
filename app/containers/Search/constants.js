@@ -1,0 +1,18 @@
+/*
+*
+* SEARCH constants
+*
+*/
+
+export const DEFAULT_ACTION = "app/Search/DEFAULT_ACTION";
+
+// Constant for loading API Data
+
+export const SEARCH_CONST_APIDATA = "app/Search/SEARCH_CONST_APIDATA";
+export const SEARCH_CONST_SEARCHTERM = "app/Search/SEARCH_CONST_SEARCHTERM";
+export const SEARCH_CONST_SEARCHTERM_CHANGE =
+  "app/Search/SEARCH_CONST_SEARCHTERM_CHANGE";
+export const SEARCH_CONST_APIDATA_SUCCESS =
+  "app/Search/SEARCH_CONST_APIDATA_SUCCESS";
+export const SEARCH_CONST_APIDATA_ERROR =
+  "app/Search/SEARCH_CONST_APIDATA_ERROR";

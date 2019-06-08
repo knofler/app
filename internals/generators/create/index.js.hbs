@@ -1,0 +1,246 @@
+/* eslint-disable no-return-assign */
+/* eslint-disable func-names */
+/* eslint-disable react/no-string-refs */
+/* eslint-disable no-console */
+/* eslint-disable comma-dangle */
+
+/*
+ *
+ * {{properCase name }}
+ *
+ */
+
+import React from "react";
+import PropTypes from "prop-types";
+import { connect } from 'react-redux';
+{{#if wantHeaders}}
+import { Helmet } from 'react-helmet';
+{{/if}}
+{{#if wantMessages}}
+import { FormattedMessage } from 'react-intl';
+{{/if}}
+{{#if wantActionsAndReducer}}
+import { createStructuredSelector } from 'reselect';
+import {
+  makeSelect{{properCase name}},
+  make{{properCase name }}AddPayloadSelector,
+  make{{properCase name }}AddModelSelector,
+  make{{properCase name }}AddFormStructureSelector,
+  make{{properCase name }}AddInputSelector,
+  make{{properCase name }}AddFormItemResetSelector
+ } from './selectors';
+ {{/if}}
+ {{#if wantMessages}}
+import messages from './messages';
+{{/if}}
+
+/* eslint-disable react/prefer-stateless-function */
+export class {{ properCase name }} extends {{{ type }}} {
+  constructor(props) {
+    super(props);
+    // Local component States
+    this.state = {
+      render: "This is Default Add Form Render Space"
+    };
+    // Binding Component specific methods
+    // this.addFormAPICall = this.addFormAPICall.bind(this);
+  }
+  {{#if wantSaga}}
+  componentDidMount() {
+    // On Component Mount, set the form structure and Model
+    this.props.{{ name }}DispatchAdd({
+      model: this.props.model,
+      struct: this.props.formStructure
+    });
+
+  }
+  {{/if}}
+  
+  // Form Handlechange event handlers              
+  handleChange = (element, e) => {
+    e.preventDefault();
+    console.log(
+      "e.currentTarget.name:",
+      e.currentTarget.name,
+      "e.currentTarget.value",
+      e.currentTarget.value
+    );
+
+    const userInput = {};
+    userInput[e.currentTarget.name] = e.currentTarget.value;
+
+    setTimeout(() => {
+      this.props.{{ name }}DispatchAddSetFormState(userInput);
+    }, 10);
+  };
+                
+  // ADD Form Methods
+  addFormAPICall = e => {
+    e.preventDefault();
+    console.log("Add Form Data Method is invoked");
+    const userInput = {};
+    this.props.formStructure.map(
+      // eslint-disable-next-line no-return-assign
+      each => (userInput[each.name] = `${e.target[each.name].value}`)
+    );
+    setTimeout(() => {
+      console.log("userInput in add is :", userInput);
+      console.log(
+        "After input setInput {{ upperCase name}}_STATE_ADD_INPUT in addFormApi Func is  :",
+        this.props.{{ name }}PropsAddInput
+      );
+      // Make API call
+      this.props.{{ name }}DispatchAddPost({
+        model: this.props.model,
+        input: userInput
+      });
+      // clear the local form
+      this.refs.form.reset();
+      // clear {{ upperCase name}}_STATE_ADD_INPUT
+      // this.props.{{ name }}DispatchAddFormInputReset();
+    }, 200);
+  };             
+                
+                
+
+  render() {
+    {{#if wantSaga}}
+     
+    {{/if}}
+    
+    if (this.props.formStructure && this.props.deploy === true) {
+      return (
+        <div>
+          {{#if wantHeaders}}
+            <Helmet>
+              <title>{{properCase name}}</title>
+              <meta name="description" content="Description of {{properCase name}}" />
+            </Helmet>
+          {{/if}}
+          {{#if wantMessages}}
+            <FormattedMessage {...messages.header} />
+          {{/if}}
+            <div>
+              <div>
+                Injected Model is :::
+                <strong> {this.props.{{ name }}PropsAddModel}</strong>
+              </div>
+              <div>
+                Form Structure Passed on ::
+                <pre>
+                  {JSON.stringify(this.props.{{ name }}PropsAddFormStructure)}
+                </pre>
+              </div>
+              <div>
+                <p>
+                  Submited Forms JSON Response :: <br />
+                  <pre className="jsonResponse">
+                    {JSON.stringify(this.props.{{ name }}PropsAddPayload)}
+                  </pre>
+                </p>
+              </div>
+              <div>
+                User Input is ::
+                <pre className="userInput">
+                  {JSON.stringify(this.props.{{ name }}PropsAddInput)}
+                </pre>
+              </div>
+              <div>
+                Form Reset Status :::
+                <strong>
+                  {" "}
+                  {JSON.stringify(this.props.{{ name }}PropsAddFormReset)}
+                </strong>
+            </div>
+            </div>
+              {/* <Form
+                formStructure={this.props.formStructure}
+                submitFunc={this.addFormAPICall}
+                ref={this.state.ref}
+              /> */}
+            {/* Display Form */}
+              <div>
+                <form ref="form" onSubmit={this.addFormAPICall}>
+                  {this.props.formStructure.map(each => (
+                    <div>
+                      <label>{each.label}</label>
+                      <input
+                        type={each.type}
+                        name={each.name}
+                        onChange={e => this.handleChange(each.name, e)}
+                      />
+                    </div>
+                  ))}
+                  <button type="submit">Submit</button>
+                </form>
+              </div>
+          </div>
+      );
+    }
+    return (
+      <div>
+        <Helmet>
+          <title>{{properCase name }}</title>
+          <meta name="description" content="Description of {{properCase name }}" />
+        </Helmet>
+        <FormattedMessage {...messages.header} />
+        <div>
+          <pre>{/* <code>{this.state.{{ name }}PropsAddPayload}</code> */}</pre>
+        </div>
+      </div>
+    );               
+  }
+}
+
+
+{{ properCase name }}.propTypes = {
+  //dispatch: PropTypes.func.isRequired,
+  formStructure: PropTypes.array.isRequired,
+  model: PropTypes.string.isRequired,
+  deploy: PropTypes.bool.isRequired,
+  {{ name }}DispatchAdd: PropTypes.func,
+  {{ name }}DispatchAddPost: PropTypes.func,
+  {{ name }}DispatchAddFormStructure: PropTypes.func,
+  {{ name }}DispatchAddChangeModel: PropTypes.func,
+  {{ name }}DispatchAddFormInputReset: PropTypes.func,
+  {{ name }}DispatchAddSetFormState: PropTypes.func,
+  {{ name }}PropsAddPayload: PropTypes.object,
+  {{ name }}PropsAddInput: PropTypes.object,
+  {{ name }}PropsAddFormReset: PropTypes.bool
+};
+
+{{#if wantActionsAndReducer}}
+const mapStateToProps = createStructuredSelector({
+  //{{ camelCase name }}: makeSelect{{properCase name}}(),
+  {{ name }}PropsAddPayload: make{{properCase name }}AddPayloadSelector(),
+  {{ name }}PropsAddModel: make{{properCase name }}AddModelSelector(),
+  {{ name }}PropsAddFormStructure: make{{properCase name }}AddFormStructureSelector(),
+  {{ name }}PropsAddInput: make{{properCase name }}AddInputSelector(),
+  {{ name }}PropsAddFormReset: make{{properCase name }}AddFormItemResetSelector()
+});
+{{/if}}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    // dispatch,
+   {{ name }}DispatchAdd: ({ struct, model }) =>
+      dispatch({{ name }}ActionAdd({ struct, model })),
+    {{ name }}DispatchAddPost: ({ input, model }) =>
+      dispatch({{ name }}ActionAddPost({ input, model })),
+    {{ name }}DispatchAddSetFormState: input =>
+      dispatch({{ name }}ActionAddSetFormState(input)),
+    {{ name }}DispatchAddFormInputReset: () =>
+      dispatch({{ name }}ActionAddFormInputReset()),
+    {{ name }}DispatchAddFormStructure: ({ data }) =>
+      dispatch({{ name }}ActionAddFormStructure({ data })),
+    {{ name }}DispatchAddChangeModel: ({ model }) =>
+      dispatch({{ name }}ActionAddChangeModel({ model }))
+  };
+}
+
+
+{{#if wantActionsAndReducer}}
+export default connect(mapStateToProps, mapDispatchToProps)({{ properCase name }});
+{{else}}
+export default connect(null, mapDispatchToProps)({{ properCase name }});
+{{/if}}

@@ -1,0 +1,67 @@
+/* eslint-disable no-return-assign */
+/* eslint-disable no-case-declarations */
+/* eslint-disable comma-dangle */
+/* eslint-disable no-console */
+/*
+ *
+ * {{ upperCase name }} reducer
+ *
+ */
+
+import { fromJS } from "immutable";
+import {
+  DEFAULT_ACTION,
+  {{ upperCase name }}_CONST_POST,
+  {{ upperCase name }}_CONST_POST_ERROR,
+  {{ upperCase name }}_CONST_POST_SUCCESS,
+} from "./constants";
+
+export const initialState = fromJS({
+  {{ upperCase name }}_STATE_ID: "",
+  {{ upperCase name }}_STATE_PAYLOAD: {},
+  {{ upperCase name }}_STATE_SUCCESS: false,
+  {{ upperCase name }}_STATE_ERROR: false,
+  {{ upperCase name }}_STATE_GET_LOADING: false,
+  {{ upperCase name }}_STATE_MODEL: "N0_MODEL",
+  {{ upperCase name }}_STATE_POST_LOADING: false
+});
+
+function deleteReducer(state = initialState, action) {
+  console.log("Global reducer file being called");
+  switch (action.type) {
+    case DEFAULT_ACTION:
+      return state;
+    case {{ upperCase name }}_CONST_POST:
+      console.log("in {{ upperCase name }}_CONST_POST in REDUCER :: action::: ", action);
+      console.log(
+        "in {{ upperCase name }}_CONST in REDUCER :: action.model ::: ",
+        action.model
+      );
+      return state
+        .set("{{ upperCase name }}_STATE_POST_LOADING", true)
+        .set("{{ upperCase name }}_STATE_POST_ERROR", false);
+    case {{ upperCase name }}_CONST_POST_ERROR:
+      console.log(
+        "in {{ upperCase name }}_CONST_ERROR in REDUCER,:: error ::: ",
+        action.error
+      );
+      return state
+        .set("{{ upperCase name }}_STATE_POST_LOADING", false)
+        .set("{{ upperCase name }}_STATE_POST_ERROR", action.error);
+    case {{ upperCase name }}_CONST_POST_SUCCESS:
+      console.log(
+        "In {{ upperCase name }}_CONST_SUCCESS in REDUCER,:: payload :::",
+        action.payload
+      );
+      return state
+        .set("{{ upperCase name }}_STATE_POST_LOADING", false)
+        .set("{{ upperCase name }}_STATE_POST_ERROR", false)
+        .set("{{ upperCase name }}_STATE_POST_SUCCESS", true)
+        .set("{{ upperCase name }}_STATE_PAYLOAD", action.payload);
+
+    default:
+      return state;
+  }
+}
+
+export default {{ name }}Reducer;

@@ -1,0 +1,97 @@
+import { all, call, put, takeLatest } from "redux-saga/effects";
+
+import { 
+  LOAD_{{ properCase name }}_API_DATA,
+  LOAD_{{ properCase name }}_EVENTS,
+  LOAD_{{ properCase name }}_FEATURED_EVENTS
+ } from "./constants";
+
+import {
+  load{{properCase name}}ApiDataSuccess,
+  load{{properCase name}}ApiDataError,
+  load{{properCase name}}EventsSuccess,
+  load{{properCase name}}EventsError,
+  load{{properCase name}}FeaturedEventsSuccess,
+  load{{properCase name}}FeaturedEventsError
+ } from "./actions";
+
+
+const herokuAPIURL = "https://mernaircanteen.herokuapp.com/api/";
+const model = '{{name}}s';
+const getUrl = process.env.API_URL || herokuAPIURL;
+const url = getUrl + model;
+
+console.log("process.env.API_URL", process.env.API_URL);
+console.log("herokuAPIURL is", herokuAPIURL);
+console.log("url is ", url);
+
+//Load Functions on Event Change
+
+function* load{{properCase name}}ApiData() {
+  yield takeLatest(LOAD_{{ properCase name }}_API_DATA, fetch{{properCase name}}ApiDataEvents);
+}
+
+function* load{{properCase name}}Events() {
+  yield takeLatest(LOAD_{{ properCase name }}_EVENTS, fetch{{properCase name}}Events);
+}
+
+function* load{{properCase name}}FeaturedEvents() {
+  yield takeLatest(LOAD_{{ properCase name }}_FEATURED_EVENTS, fetch{{properCase name}}FeaturedEvents);
+}
+
+//Fetch Functions for API interaction
+
+function* fetch{{properCase name}}ApiDataEvents(action) {
+  try {
+    // LOAD_{{ properCase name }}_API_DATA event action and api call
+    console.log("LOAD_{{ properCase name }}_API_DATA TenantId", action.tenantId);
+    console.log("LOAD_{{ properCase name }}_API_DATA skip", action.skip);
+    console.log("LOAD_{{ properCase name }}_API_DATA take", action.take);
+
+    const response = yield call(fetch, url);
+    const responseBody = yield response.json();
+    console.log("responseBody of LOAD_{{ properCase name }}_API_DATA  in saga is", responseBody);
+    yield put(load{{properCase name}}ApiDataSuccess(responseBody));
+  }catch(error) {
+    yield put(load{{properCase name}}ApiDataError(error));
+  }
+}
+
+function* fetch{{properCase name}}Events(action) {
+  try {
+    // LOAD_{{ properCase name }}_EVENTS event action and api call
+    console.log("LOAD_{{ properCase name }}_EVENTS TenantId", action.tenantId);
+    console.log("LOAD_{{ properCase name }}_EVENTS skip", action.skip);
+    console.log("LOAD_{{ properCase name }}_EVENTS take", action.take);
+
+    const response = yield call(fetch, url);
+    const responseBody = yield response.json();
+    console.log("responseBody of LOAD_{{ properCase name }}_EVENTS in saga is", responseBody);
+    yield put(load{{properCase name}}EventsSuccess(responseBody));
+  }catch(error) {
+    yield put(load{{properCase name}}EventsError(error));
+  }
+}
+
+function* fetch{{properCase name}}FeaturedEvents(action) {
+  try {
+    // LOAD_{{ properCase name }}_FEATURED_EVENTS event action and api call
+    console.log("LOAD_{{ properCase name }}_FEATURED_EVENTS TenantId", action.tenantId);
+    console.log("LOAD_{{ properCase name }}_FEATURED_EVENTS skip", action.skip);
+    console.log("LOAD_{{ properCase name }}_FEATURED_EVENTS take", action.take);
+
+    const response = yield call(fetch, url);
+    const responseBody = yield response.json();
+    console.log("responseBody of LOAD_{{ properCase name }}_FEATURED_EVENTS in saga is", responseBody);
+    yield put(load{{properCase name}}FeaturedEventsSuccess(responseBody));
+  }catch(error) {
+    yield put(load{{properCase name}}FeaturedEventsError(error));
+  }
+}
+
+
+// Individual exports for testing
+export default function* {{ camelCase name }}Saga() {
+  // See example in containers/HomePage/saga.js
+  yield all([load{{properCase name}}ApiData(),load{{properCase name}}Events(),load{{properCase name}}FeaturedEvents()]);
+}

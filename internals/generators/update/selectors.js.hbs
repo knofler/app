@@ -1,0 +1,128 @@
+/* eslint-disable comma-dangle */
+/* eslint-disable no-console */
+/*
+*
+* {{ upperCase name }} selectors
+*
+*/
+
+import { createSelector } from "reselect";
+import { initialState } from "./reducer";
+
+/**
+ * Direct selector to the create state domain
+ */
+
+const select{{ properCase name }}Domain = state => state.get("{{ camelCase name }}", initialState);
+
+/**
+ * {{ upperCase name }}_STATE_PLACE_HOLDER
+ */
+
+const make{{ properCase name }}GetPayloadSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_PLACE_HOLDER in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_PLACE_HOLDER")
+    );
+    return substate.get("{{ upperCase name }}_STATE_PLACE_HOLDER");
+  });
+
+/**
+ * {{ upperCase name }}_STATE_PAYLOAD
+ */
+
+const make{{ properCase name }}PostPayloadSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_PAYLOAD in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_PAYLOAD")
+    );
+    return substate.get("{{ upperCase name }}_STATE_PAYLOAD");
+  });
+
+/**
+ * {{ upperCase name }}_STATE_INPUT
+ */
+
+const make{{ properCase name }}InputSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_INPUT in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_INPUT")
+    );
+    return substate.get("{{ upperCase name }}_STATE_INPUT");
+  });
+
+/**
+ * {{ upperCase name }}_STATE_MODEL
+ */
+
+const make{{ properCase name }}ModelSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_MODEL in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_MODEL")
+    );
+    return substate.get("{{ upperCase name }}_STATE_MODEL");
+  });
+
+/**
+ * {{ upperCase name }}_STATE_ID
+ */
+
+const make{{ properCase name }}IdSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_ID in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_ID")
+    );
+    return substate.get("{{ upperCase name }}_STATE_ID");
+  });
+
+/**
+ * {{ upperCase name }}_STATE_FORM_STRUCTURE
+ */
+
+const make{{ properCase name }}FormStructureSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_FORM_STRUCTURE in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_FORM_STRUCTURE")
+    );
+    return substate.get("{{ upperCase name }}_STATE_FORM_STRUCTURE");
+  });
+
+/**
+ * {{ upperCase name }}_STATE_FORM_ITEM_RESET
+ */
+
+const make{{ properCase name }}FormItemResetSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_FORM_ITEM_RESET in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_FORM_RESET"),
+      "{{ upperCase name }}_STATE_INPUT after reset in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_INPUT")
+    );
+    return substate.get("{{ upperCase name }}_STATE_FORM_RESET");
+  });
+
+/**
+ * Default selector used by {{ properCase name }}
+ */
+
+const makeSelect{{ properCase name }} = () =>
+  createSelector(select{{ properCase name }}Domain, substate => substate.toJS());
+
+export default makeSelect{{ properCase name }};
+export {
+  select{{ properCase name }}Domain,
+  make{{ properCase name }}PostPayloadSelector,
+  make{{ properCase name }}GetPayloadSelector,
+  make{{ properCase name }}InputSelector,
+  make{{ properCase name }}IdSelector,
+  make{{ properCase name }}ModelSelector,
+  make{{ properCase name }}FormStructureSelector,
+  make{{ properCase name }}FormItemResetSelector
+};

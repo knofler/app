@@ -1,0 +1,179 @@
+/* eslint-disable no-return-assign */
+/* eslint-disable func-names */
+/* eslint-disable react/no-string-refs */
+/* eslint-disable no-console */
+/* eslint-disable comma-dangle */
+
+/**
+ *
+ * {{properCase name }}
+ *
+ */
+
+import React from 'react';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+{{#if wantHeaders}}
+import { Helmet } from 'react-helmet';
+{{/if}}
+{{#if wantMessages}}
+import { FormattedMessage } from 'react-intl';
+{{/if}}
+{{#if wantActionsAndReducer}}
+import { createStructuredSelector } from 'reselect';
+{{/if}}
+import { compose } from 'redux';
+
+import {
+  {{ name }}Action,
+  {{ name }}ActionPost,
+  {{ name }}ActionChangeModel,
+} from "./actions";
+
+{{#if wantSaga}}
+import injectSaga from 'utils/injectSaga';
+{{/if}}
+{{#if wantActionsAndReducer}}
+import injectReducer from 'utils/injectReducer';
+import {
+  // makeSelect{{ properCase name }},
+  make{{ properCase name }}PostPayloadSelector,
+  make{{ properCase name }}ModelSelector,
+  make{{ properCase name }}IdSelector,
+ } from './selectors';
+import reducer from './reducer';
+{{/if}}
+{{#if wantSaga}}
+import saga from './saga';
+{{/if}}
+{{#if wantMessages}}
+import messages from './messages';
+{{/if}}
+
+import "./{{ properCase name }}.css";
+
+/* eslint-disable react/prefer-stateless-function */
+export class {{properCase name }} extends React.Component {
+  constructor(props) {
+    super(props);
+    // Local component States
+    this.state = {
+      // render: "This is Default  Form Render Space"
+    };
+    // Binding Component specific methods
+    // this.FormAPICall = this.FormAPICall.bind(this);
+  }
+
+  {{#if wantSaga}}
+  componentDidMount() {
+    // // make api call to {{ name }} the entry with matching id
+    this.props.{{ name }}DispatchPost({
+      id: this.props.id,
+      model: this.props.model
+    });
+  }
+  {{/if}}
+
+  //  {{ upperCase name}} Form Methods
+  {{ name }}FormAPICall = (id, e) => {
+    e.preventDefault();
+    console.log(" Form Data Method is invoked");
+    console.log("{{properCase name }} received id is ", id);
+    setTimeout(() => {
+      // console.log("userInput in  is :", userInput);
+      console.log(
+        "After input setInput {{ upperCase name}}_STATE_INPUT in FormApi Func is  :",
+        this.props.{{ name }}PropsInput
+      );
+      // Make API call
+      this.props.{{ name }}DispatchPost({
+        id: this.props.id,
+        model: this.props.model
+      });
+      // clear the local form
+      // this.refs.form.reset();
+      // clear {{ upperCase name}}_STATE__INPUT
+      // this.props.{{ name }}DispatchFormInputReset();
+    }, 200);
+  };
+
+  render() {
+    {{#if wantSaga}}
+     
+    {{/if}}
+    return (
+      <div>
+        {{#if wantHeaders}}
+        <Helmet>
+          <title>{{properCase name }}</title>
+          <meta name="description" content="Description of {{properCase name }}" />
+        </Helmet>
+        {{/if}}
+        {{#if wantMessages}}
+        {/* <FormattedMessage {...messages.header} /> */}
+         {{/if}}
+        <div>
+          <p>
+            {{properCase name }}d payload JSON Response :: <br />
+            <pre className="jsonResponseRed">
+              {JSON.stringify(this.props.{{ name }}PostPropsPayload)}
+            </pre>
+          </p>
+        </div>
+      </div>
+    );
+  }
+}
+
+{{properCase name }}.propTypes = {
+  // dispatch: PropTypes.func.isRequired,
+  id: PropTypes.string,
+  model: PropTypes.string.isRequired,
+  deploy: PropTypes.bool.isRequired,
+  {{ name }}DispatchPost: PropTypes.func,
+  {{ name }}DispatchChangeModel: PropTypes.func,
+  {{ name }}PostPropsPayload: PropTypes.object,
+};
+
+{{#if wantActionsAndReducer}}
+const mapStateToProps = createStructuredSelector({
+  // {{ name }}: makeSelect{{properCase name }}(),
+  {{ name }}PostPropsPayload: make{{properCase name }}PostPayloadSelector(),
+  {{ name }}PropsModel: make{{properCase name }}ModelSelector(),
+  {{ name }}PropsId: make{{properCase name }}IdSelector()
+});
+{{/if}}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    // dispatch,
+    {{ name }}DispatchPost: ({ id, model }) =>
+      dispatch({{ name }}ActionPost({ id, model })),
+    {{ name }}DispatchChangeModel: ({ model }) =>
+      dispatch({{ name }}ActionChangeModel({ model }))
+  };
+}
+
+{{#if wantActionsAndReducer}}
+const withConnect = connect(
+  mapStateToProps,
+  mapDispatchToProps
+);
+
+const withReducer = injectReducer({ key: '{{ camelCase name }}', reducer });
+{{else}}
+const withConnect = connect(null, mapDispatchToProps);
+{{/if}}
+{{#if wantSaga}}
+const withSaga = injectSaga({ key: '{{ camelCase name }}', saga });
+{{/if}}
+
+export default compose(
+{{#if wantActionsAndReducer}}
+  withReducer,
+{{/if}}
+{{#if wantSaga}}
+  withSaga,
+{{/if}}
+  withConnect
+)({{ properCase name }});

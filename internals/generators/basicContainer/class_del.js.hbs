@@ -1,0 +1,140 @@
+/**
+ *
+ * {{properCase name }}
+ *
+ */
+
+import React from 'react';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+{{#if wantHeaders}}
+import { Helmet } from 'react-helmet';
+{{/if}}
+{{#if wantMessages}}
+import { FormattedMessage } from 'react-intl';
+{{/if}}
+{{#if wantActionsAndReducer}}
+import { createStructuredSelector } from 'reselect';
+{{/if}}
+import { compose } from 'redux';
+import Card from "components/Card";
+import { 
+  load{{ properCase name }}ApiData,
+  load{{ properCase name }}Events,
+  load{{ properCase name }}FeaturedEvents
+ } from "./actions";
+
+{{#if wantSaga}}
+import injectSaga from 'utils/injectSaga';
+{{/if}}
+{{#if wantActionsAndReducer}}
+import injectReducer from 'utils/injectReducer';
+import {
+  makeSelect{{properCase name}},
+  make{{properCase name }}ApiDataSelector,
+  make{{properCase name}}EventsSelector,
+  make{{properCase name}}FeaturedEventSelector
+ } from './selectors';
+import reducer from './reducer';
+{{/if}}
+{{#if wantSaga}}
+import saga from './saga';
+{{/if}}
+{{#if wantMessages}}
+import messages from './messages';
+{{/if}}
+
+/* eslint-disable react/prefer-stateless-function */
+export class {{ properCase name }} extends {{{ type }}} {
+  {{#if wantSaga}}
+  componentDidMount() {
+    // load API Data
+    this.props.load{{ properCase name }}ApiData("111111", 88, 99);
+    // load events
+    this.props.load{{ properCase name }}Events("222222", 0, 14, "");
+    // // load Featured Events
+    this.props.load{{ properCase name }}FeaturedEvents("333333", 1, 12);
+  }
+  {{/if}}
+  render() {
+    {{#if wantSaga}}
+      const featuredEvents = {
+        ...this.props.featuredEvents
+      };
+      console.log("featuredEvents in index", featuredEvents);
+      
+      const events = {
+        ...this.props.events
+      };
+      console.log("events in index", events);
+    {{/if}}
+    return (
+      <div>
+      {{#if wantHeaders}}
+        <Helmet>
+          <title>{{properCase name}}</title>
+          <meta name="description" content="Description of {{properCase name}}" />
+        </Helmet>
+      {{/if}}
+      {{#if wantMessages}}
+        <FormattedMessage {...messages.header} />
+      {{/if}}
+      </div>
+    );
+  }
+}
+
+{{ properCase name }}.propTypes = {
+  //dispatch: PropTypes.func.isRequired,
+  apiDataEvents_{{ properCase name }}: PropTypes.array,
+  load{{ properCase name }}ApiData: PropTypes.func,
+  events_{{ properCase name }}: PropTypes.array,
+  load{{ properCase name }}Events: PropTypes.func,
+  featuredEvents_{{ properCase name }}: PropTypes.array,
+  load{{ properCase name }}FeaturedEvents: PropTypes.func
+};
+
+{{#if wantActionsAndReducer}}
+const mapStateToProps = createStructuredSelector({
+  //{{ camelCase name }}: makeSelect{{properCase name}}(),
+  events_{{ properCase name }}: make{{properCase name}}EventsSelector(),
+  featuredEvents_{{ properCase name }}: make{{properCase name}}FeaturedEventSelector(),
+  apiDataEvents_{{ properCase name }}: make{{ properCase name }}ApiDataSelector()
+});
+{{/if}}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    // dispatch,
+    load{{ properCase name }}ApiData: (tenantId, skip, take) =>
+    dispatch(load{{ properCase name }}ApiData(tenantId, skip, take)),
+    load{{properCase name}}Events: (tenantId, skip, take, searchTerm) =>
+    dispatch(load{{properCase name}}Events(tenantId, skip, take, searchTerm)),
+    load{{properCase name}}FeaturedEvents: (tenantId, skip, take) =>
+    dispatch(load{{properCase name}}FeaturedEvents(tenantId, skip, take))
+  };
+}
+
+{{#if wantActionsAndReducer}}
+const withConnect = connect(
+  mapStateToProps,
+  mapDispatchToProps
+);
+
+const withReducer = injectReducer({ key: '{{ camelCase name }}', reducer });
+{{else}}
+const withConnect = connect(null, mapDispatchToProps);
+{{/if}}
+{{#if wantSaga}}
+const withSaga = injectSaga({ key: '{{ camelCase name }}', saga });
+{{/if}}
+
+export default compose(
+{{#if wantActionsAndReducer}}
+  withReducer,
+{{/if}}
+{{#if wantSaga}}
+  withSaga,
+{{/if}}
+  withConnect
+)({{ properCase name }});

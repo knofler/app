@@ -1,0 +1,120 @@
+/* eslint-disable comma-dangle */
+/* eslint-disable no-console */
+/*
+*
+* {{ upperCase name }} saga
+*
+*/
+
+import { all, call, put, takeLatest } from "redux-saga/effects";
+{{#if wantSocket}}
+import { socket } from "utils/socketio-client";
+{{/if}}
+import { {{ upperCase name }}_CONST_GET, {{ upperCase name }}_CONST_POST } from "./constants";
+import {
+  {{ name }}ActionGetSuccess,
+  {{ name }}ActionGetError,
+  {{ name }}ActionPostSuccess,
+  {{ name }}ActionPostError
+} from "./actions";
+
+const herokuAPIURL = "https://mernaircanteen.herokuapp.com";
+const model = "/api/{{ model }}";
+const getUrl = process.env.API_URL || herokuAPIURL;
+const url = getUrl + model;
+
+console.log("process.env.API_URL", process.env.API_URL);
+console.log("herokuAPIURL is", herokuAPIURL);
+console.log("url is ", url);
+
+// Load Functions on Event Change
+function* {{ name }}SagaGet() {
+  yield takeLatest({{ upperCase name }}_CONST_GET, fetchGet{{properCase name}});
+}
+
+function* {{ name }}SagaPost() {
+  yield takeLatest({{ upperCase name }}_CONST_POST, fetchPost{{properCase name}});
+}
+
+function* fetchGet{{properCase name}}(action) {
+  try {
+    // {{ upperCase name }}_CONST_GET event action and api call
+    console.log("{{ upperCase name }}_CONST_GET constant's action in saga is:: ", action);
+    console.log(
+      "{{ upperCase name }}_CONST_GET constant's action.id in saga is:: ",
+      action.id
+    );
+    console.log(
+      "{{ upperCase name }}_CONST_GET constant's action.model in saga is:: ",
+      action.model
+    );
+
+    if (action.model !== undefined && action.id !== undefined) {
+      const {{ name }}Url = `${getUrl}/api/${action.model}/${action.id}`;
+      console.log("{{ name }}Url:", {{ name }}Url);
+      // Get {{ name }} item first
+      const {{ name }}Item = yield call(fetch, {{ name }}Url);
+      const {{ name }}Body = yield {{ name }}Item.json();
+      console.log("{{ name }}Body of {{ upperCase name }}_CONST_GET in saga is", {{ name }}Body.data);
+      window.localStorage.setItem(
+        "{{ name }}-data-item",
+        JSON.stringify({{ name }}Body.data)
+      );
+      yield put({{ name }}ActionGetSuccess({{ name }}Body.data));
+    }
+  } catch (error) {
+    yield put({{ name }}ActionGetError(error));
+  }
+}
+
+function* fetchPost{{properCase name}}(action) {
+  try {
+    // CRUD_CONST_{{ upperCase name }} event action and api call
+    console.log("{{ upperCase name }}_CONST_POST constant's action in saga is:: ", action);
+    console.log(
+      "{{ upperCase name }}_CONST_POST constant's action.id in saga is:: ",
+      action.id
+    );
+    console.log(
+      "{{ upperCase name }}_CONST constant's action.data in saga is:: ",
+      action.input
+    );
+    console.log(
+      "{{ upperCase name }}_CONST_POST constant's action.model in saga is:: ",
+      action.model
+    );
+
+    if (
+      action.input !== undefined &&
+      action.model !== undefined &&
+      action.id !== undefined
+    ) {
+      const {{ name }}Url = `${getUrl}/api/${action.model}/${action.id}`;
+      console.log("{{ name }}Url:", {{ name }}Url);
+      //
+      const response = yield call(fetch, {{ name }}Url, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(action.input)
+      });
+      const responseBody = yield response.json();
+      console.log("responseBody of {{ upperCase name }}_CONST_POST in saga is", responseBody);
+      window.localStorage.setItem("{{ name }}-data", JSON.stringify(responseBody));
+      yield put({{ name }}ActionPostSuccess(responseBody));
+      {{#if wantSocket}}
+      socket.emit("update_data", responseBody);
+      {{/if}}
+    }
+  } catch (error) {
+    yield put({{ name }}ActionPostError(error));
+  }
+}
+
+// Individual exports for testing
+export default function* {{ name }}Saga() {
+  // See example in containers/HomePage/saga.js
+  yield all([{{ name }}SagaGet(), {{ name }}SagaPost()]);
+}

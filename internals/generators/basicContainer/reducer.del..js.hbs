@@ -1,0 +1,80 @@
+/*
+ *
+ * {{ properCase name }} reducer
+ *
+ */
+
+import { fromJS } from 'immutable';
+import {
+  DEFAULT_ACTION,
+  LOAD_{{ properCase name }}_API_DATA,
+  LOAD_{{ properCase name }}_API_DATA_ERROR,
+  LOAD_{{ properCase name }}_API_DATA_SUCCESS,
+  LOAD_{{ properCase name }}_EVENTS,
+  LOAD_{{ properCase name }}_EVENTS_ERROR,
+  LOAD_{{ properCase name }}_EVENTS_SUCCESS,
+  LOAD_{{ properCase name }}_FEATURED_EVENTS,
+  LOAD_{{ properCase name }}_FEATURED_EVENTS_ERROR,
+  LOAD_{{ properCase name }}_FEATURED_EVENTS_SUCCESS
+} from "./constants";
+
+export const initialState = fromJS({
+  {{ properCase name }}_API_Data_Events: [],
+  {{ properCase name }}_API_Data_loading: false,
+  {{ properCase name }}_API_Data_error: false,
+  {{ properCase name }}_events: [],
+  {{ properCase name }}_events_loading: false,
+  {{ properCase name }}_events_error: false,
+  {{ properCase name }}_featured_events: [],
+  {{ properCase name }}_featured_loading: false,
+  {{ properCase name }}_featured_error: false,
+});
+
+function {{ camelCase name }}Reducer(state = initialState, action) {
+  console.log("reducer file being called");
+  switch (action.type) {
+    case DEFAULT_ACTION:
+      return state;
+    case LOAD_{{ properCase name }}_API_DATA:
+      console.log("in LOAD_{{ properCase name }}_API_DATA action: ", action);
+      return state.set("{{ properCase name }}_API_Data_loading", true).set("{{ properCase name }}_API_Data_error", false);
+    case LOAD_{{ properCase name }}_API_DATA_ERROR:
+      return state.set("{{ properCase name }}_API_Data_loading", false).set("{{ properCase name }}_API_Data_error", action.{{ properCase name }}_API_Data_error);
+    case LOAD_{{ properCase name }}_API_DATA_SUCCESS:
+      console.log("In LOAD_{{ properCase name }}_API_DATA_SUCCESS reducer, action", action.{{ properCase name }}_API_Data_Events);
+      return state
+        .set("{{ properCase name }}_API_Data_loading", true)
+        .set("{{ properCase name }}_API_Data_error", false)
+        .set("{{ properCase name }}_API_Data_Events", action.{{ properCase name }}_API_Data_Events);
+    case LOAD_{{ properCase name }}_EVENTS:
+      console.log("In LOAD_{{ properCase name }}_EVENTS action", action);
+      return state.set("{{ properCase name }}_events_loading", true).set("{{ properCase name }}_events_error", false);
+    case LOAD_{{ properCase name }}_EVENTS_ERROR:
+      return state.set("{{ properCase name }}_events_loading", false).set("{{ properCase name }}_events_error", action.{{ properCase name }}_events_error);
+    case LOAD_{{ properCase name }}_EVENTS_SUCCESS:
+      console.log("In LOAD_{{ properCase name }}_EVENTS_SUCCESS reducer, action.{{ properCase name }}_Events",
+      action.{{ properCase name }}_events);
+      return state
+      .set("{{ properCase name }}_events_loading", true)
+      .set("{{ properCase name }}_events_error", false)
+      .set("{{ properCase name }}_events", action.{{ properCase name }}_events);
+    case LOAD_{{ properCase name }}_FEATURED_EVENTS:
+      console.log("In LOAD_{{ properCase name }}_FEATURED_EVENTS action", action.{{ properCase name }}_featured_events);
+      return state.set("{{ properCase name }}_featured_events", true).set("{{ properCase name }}_featured_error", false);
+    case LOAD_{{ properCase name }}_FEATURED_EVENTS_ERROR:
+      return state
+        .set("{{ properCase name }}_featured_events", false)
+        .set("{{ properCase name }}_featured_error", action.{{ properCase name }}_featured_error);
+    case LOAD_{{ properCase name }}_FEATURED_EVENTS_SUCCESS:
+        console.log("In LOAD_{{ properCase name }}_FEATURED_EVENTS_SUCCESS reducer,action.{{ properCase name }}_featured_events",
+        action.{{ properCase name }}_featured_events);
+      return state
+        .set("{{ properCase name }}_featured_loading", true)
+        .set("{{ properCase name }}_featured_error", false)
+        .set("{{ properCase name }}_featured_events", action.{{ properCase name }}_featured_events);
+    default:
+      return state;
+  }
+}
+
+export default {{ camelCase name }}Reducer;

@@ -1,0 +1,48 @@
+/*
+ *
+ * {{ upperCase name }} reducer
+ *
+ */
+
+import { fromJS } from 'immutable';
+import {
+  DEFAULT_ACTION,
+  {{ upperCase name }}_CONST_APIDATA,
+  {{ upperCase name }}_CONST_APIDATA_ERROR,
+  {{ upperCase name }}_CONST_APIDATA_SUCCESS,
+
+} from "./constants";
+
+export const initialState = fromJS({
+  {{ upperCase name }}_STATE_APIDATA: [],
+  {{ upperCase name }}_STATE_APIDATA_LOADING: false,
+  {{ upperCase name }}_STATE_APIDATA_ERROR: false,
+});
+
+function {{ camelCase name }}Reducer(state = initialState, action) {
+  console.log("Global reducer file being called");
+  switch (action.type) {
+    case DEFAULT_ACTION:
+      return state;
+    case {{ upperCase name }}_CONST_APIDATA:
+      console.log("in {{ upperCase name }}_CONST_APIDATA action: ", action);
+      return state
+        .set("{{ upperCase name }}_STATE_APIDATA_LOADING", true)
+        .set("{{ upperCase name }}_STATE_APIDATA_ERROR", false);
+    case {{ upperCase name }}_CONST_APIDATA_ERROR:
+      return state
+        .set("{{ upperCase name }}_STATE_APIDATA_LOADING", false)
+        .set("{{ upperCase name }}_STATE_APIDATA_ERROR", action.error);
+    case {{ upperCase name }}_CONST_APIDATA_SUCCESS:
+      console.log("In {{ upperCase name }}_CONST_APIDATA_SUCCESS reducer, action", action.apiData);
+      return state
+        .set("{{ upperCase name }}_STATE_APIDATA_LOADING", true)
+        .set("{{ upperCase name }}_STATE_APIDATA_ERROR", false)
+        .set("{{ upperCase name }}_STATE_APIDATA", action.apiData);
+
+    default:
+      return state;
+  }
+}
+
+export default {{ camelCase name }}Reducer;

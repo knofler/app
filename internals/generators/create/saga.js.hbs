@@ -1,0 +1,90 @@
+/* eslint-disable comma-dangle */
+/* eslint-disable no-console */
+/*
+*
+* {{ upperCase name }} saga
+*
+*/
+
+import { all, call, put, takeLatest } from "redux-saga/effects";
+{{#if wantSocket}}
+import { socket } from "utils/socketio-client";
+{{/if}}
+import { 
+  {{ upperCase name }}_CONST_ADD_POST 
+} from "./constants";
+
+import { 
+  {{ name }}ActionAddSuccess, 
+  {{ name }}ActionAddError 
+} from "./actions";
+
+const herokuAPIURL = "https://mernaircanteen.herokuapp.com";
+const model = "/api/{{ model }}";
+const getUrl = process.env.API_URL || herokuAPIURL;
+const url = getUrl + model;
+
+console.log("process.env.API_URL", process.env.API_URL);
+console.log("herokuAPIURL is", herokuAPIURL);
+console.log("url is ", url);
+
+// Load Functions on Event Change
+
+function* {{ name }}SagaAdd() {
+  yield takeLatest({{ upperCase name }}_CONST_ADD_POST, fetch{{properCase name}}Add);
+}
+
+
+function* fetch{{properCase name}}Add(action) {
+  try {
+    // CRUD_CONST_{{ upperCase name }} event action and api call
+    console.log(
+      "{{ upperCase name }}_CONST_ADD_POST constant's action in saga is:: ",
+      action
+    );
+    console.log(
+      "{{ upperCase name }}_CONST_ADD constant's action.data in saga is:: ",
+      action.input
+    );
+    console.log(
+      "{{ upperCase name }}_CONST_ADD_POST constant's action.model in saga is:: ",
+      action.model
+    );
+
+    if (action.input !== undefined && action.model !== undefined) {
+      const {{properCase name}}Url = `${getUrl}/api/${action.model}`;
+      console.log("{{properCase name}}Url:", {{properCase name}}Url);
+      const response = yield call(fetch, {{properCase name}}Url, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(action.input)
+      });
+      const responseBody = yield response.json();
+      console.log(
+        "responseBody of {{ upperCase name }}_CONST_ADD_POST in saga is",
+        responseBody
+      );
+      if (!responseBody.errors) {
+        window.localStorage.setItem(
+          "{{properCase name}}-data",
+          JSON.stringify(responseBody)
+        );
+        yield put({{ name }}ActionAddSuccess(responseBody));
+        {{#if wantSocket}}
+        socket.emit("add_data", responseBody);
+        {{/if}}
+      }
+    }
+  } catch (error) {
+    yield put({{ name }}ActionAddError(error));
+  }
+}
+
+// Individual exports for testing
+export default function* {{ name }}Saga() {
+  // See example in containers/HomePage/saga.js
+  yield all([{{ name }}SagaAdd()]);
+}

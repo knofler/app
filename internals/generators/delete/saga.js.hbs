@@ -1,0 +1,72 @@
+/* eslint-disable comma-dangle */
+/* eslint-disable no-console */
+/*
+*
+* {{ upperCase name }} saga
+*
+*/
+
+import { all, call, put, takeLatest } from "redux-saga/effects";
+import { socket } from "utils/socketio-client";
+import { {{ upperCase name }}_CONST_POST } from "./constants";
+import {
+  {{ name }}ActionPostSuccess,
+  {{ name }}ActionPostError
+} from "./actions";
+
+const herokuAPIURL = "https://mernaircanteen.herokuapp.com";
+const model = "/api/books";
+const getUrl = process.env.API_URL || herokuAPIURL;
+const url = getUrl + model;
+
+console.log("process.env.API_URL", process.env.API_URL);
+console.log("herokuAPIURL is", herokuAPIURL);
+console.log("url is ", url);
+
+// Load Functions on Event Change
+
+function* {{ name }}SagaPost() {
+  yield takeLatest({{ upperCase name }}_CONST_POST, fetchPostDelete);
+}
+
+
+function* fetchPostDelete(action) {
+  try {
+    // CRUD_CONST_{{ upperCase name }} event action and api call
+    console.log("{{ upperCase name }}_CONST_POST constant's action in saga is:: ", action);
+    console.log(
+      "{{ upperCase name }}_CONST_POST constant's action.id in saga is:: ",
+      action.id
+    );
+    console.log(
+      "{{ upperCase name }}_CONST_POST constant's action.model in saga is:: ",
+      action.model
+    );
+
+    if (action.model !== undefined && action.id !== undefined) {
+      const {{ name }}Url = `${getUrl}/api/${action.model}/${action.id}`;
+      console.log("{{ name }}Url:", {{ name }}Url);
+      //
+      const response = yield call(fetch, {{ name }}Url, {
+        method: "{{ upperCase name }}",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        }
+      });
+      const responseBody = yield response.json();
+      console.log("responseBody of {{ upperCase name }}_CONST_POST in saga is", responseBody);
+      window.localStorage.setItem("{{ name }}-data", JSON.stringify(responseBody));
+      yield put({{ name }}ActionPostSuccess(responseBody));
+      socket.emit("{{ name }}_data", responseBody);
+    }
+  } catch (error) {
+    yield put({{ name }}ActionPostError(error));
+  }
+}
+
+// Individual exports for testing
+export default function* {{ name }}Saga() {
+  // See example in containers/HomePage/saga.js
+  yield all([{{ name }}SagaPost()]);
+}

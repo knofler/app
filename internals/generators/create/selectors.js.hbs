@@ -1,0 +1,101 @@
+/* eslint-disable comma-dangle */
+/* eslint-disable no-console */
+/*
+*
+* {{ upperCase name }} selectors
+*
+*/
+
+import { createSelector } from "reselect";
+import { initialState } from "./reducer";
+
+/**
+ * Direct selector to the create state domain
+ */
+
+const select{{ properCase name }}Domain = state =>  
+  state.get('{{ camelCase name }}', initialState);
+
+/**
+ * {{ upperCase name }}_STATE_ADD_PAYLOAD
+ */
+
+const make{{ properCase name }}AddPayloadSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_ADD_PAYLOAD in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_ADD_PAYLOAD")
+    );
+    return substate.get("{{ upperCase name }}_STATE_ADD_PAYLOAD");
+  });
+
+/**
+ * {{ upperCase name }}_STATE_ADD_INPUT
+ */
+
+const make{{ properCase name }}AddInputSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_ADD_INPUT in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_ADD_INPUT")
+    );
+    return substate.get("{{ upperCase name }}_STATE_ADD_INPUT");
+  });
+
+/**
+ * {{ upperCase name }}_STATE_ADD_MODEL
+ */
+
+const make{{ properCase name }}AddModelSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_ADD_MODEL in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_ADD_MODEL")
+    );
+    return substate.get("{{ upperCase name }}_STATE_ADD_MODEL");
+  });
+
+/**
+ * {{ upperCase name }}_STATE_ADD_FORM_STRUCTURE
+ */
+
+const make{{ properCase name }}AddFormStructureSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_ADD_FORM_STRUCTURE in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_ADD_FORM_STRUCTURE")
+    );
+    return substate.get("{{ upperCase name }}_STATE_ADD_FORM_STRUCTURE");
+  });
+
+/**
+ * {{ upperCase name }}_STATE_ADD_FORM_ITEM_RESET
+ */
+
+const make{{ properCase name }}AddFormItemResetSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_ADD_FORM_ITEM_RESET in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_ADD_FORM_RESET"),
+      "{{ upperCase name }}_STATE_ADD_INPUT after reset in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_ADD_INPUT")
+    );
+    return substate.get("{{ upperCase name }}_STATE_ADD_FORM_RESET");
+  });
+
+/**
+ * Default selector used by {{ properCase name }}
+ */
+
+const makeSelect{{ properCase name }} = () =>
+  createSelector(select{{ properCase name }}Domain, substate => substate.toJS());
+
+export default makeSelect{{ properCase name }};
+export {
+  select{{ properCase name }}Domain,
+  make{{ properCase name }}AddPayloadSelector,
+  make{{ properCase name }}AddInputSelector,
+  make{{ properCase name }}AddModelSelector,
+  make{{ properCase name }}AddFormStructureSelector,
+  make{{ properCase name }}AddFormItemResetSelector
+};

@@ -1,0 +1,142 @@
+/* eslint-disable comma-dangle */
+/* eslint-disable no-console */
+/*
+*
+* {{ upperCase name }} actions
+*
+*/
+
+import {
+  DEFAULT_ACTION,
+  {{ upperCase name }}_CONST_ADD,
+  {{ upperCase name }}_CONST_ADD_POST,
+  {{ upperCase name }}_CONST_ADD_SUCCESS,
+  {{ upperCase name }}_CONST_ADD_ERROR,
+  {{ upperCase name }}_CONST_ADD_MODEL,
+  {{ upperCase name }}_CONST_ADD_FORM_STRUCTURE,
+  {{ upperCase name }}_CONST_ADD_FORM_INPUT,
+  {{ upperCase name }}_CONST_ADD_FORM_RESET
+} from "./constants";
+
+/*
+*
+* DEFAULT actions {{ upperCase name }}
+*
+*/
+
+export function defaultAction() {
+  return {
+    type: DEFAULT_ACTION
+  };
+}
+
+/*
+*
+  * {{ upperCase name }} ACTIONS ADD
+*
+*/
+
+/*
+ *
+    * {{ upperCase name }} ACTIONS ADD MODEL,FORM STRUCTURE AND INITIIAL FORM INPUT
+ *
+ */
+export function {{name}}ActionAdd({ struct, model }) {
+  console.log("in {{name}}ActionAdd in ACTION :: struct :::", struct);
+  console.log("in {{name}}ActionAdd in ACTION :: model :::", model);
+  return {
+    type: {{ upperCase name }}_CONST_ADD,
+    struct,
+    model
+  };
+}
+/*
+ *
+    * {{ upperCase name }} ACTIONS API POST CALL WITH FORM INPUT
+ *
+ */
+export function {{name}}ActionAddPost({ input, model }) {
+  console.log("in {{name}}ActionAddPost in ACTION :: input :::", input);
+  console.log("in {{name}}ActionAddPost in ACTION :: model :::", model);
+  return {
+    type: {{ upperCase name }}_CONST_ADD_POST,
+    input,
+    model
+  };
+}
+/*
+ *
+    * {{ upperCase name }} ACTIONS API CALL ERROR HANDLING
+ *
+ */
+export function {{name}}ActionAddError(error) {
+  console.log("in {{name}}ActionAddError in ACTION :: error :::", error);
+  return {
+    type: {{ upperCase name }}_CONST_ADD_ERROR,
+    error
+  };
+}
+/*
+ *
+    * {{ upperCase name }} ACTIONS API CALL SUCCESS CALL BACK FUNCTIONS
+ *
+ */
+export function {{name}}ActionAddSuccess(payload) {
+  console.log("in {{name}}ActionAddSuccess in ACTION :: payload :::", payload);
+  return {
+    type: {{ upperCase name }}_CONST_ADD_SUCCESS,
+    payload
+  };
+}
+/*
+ *
+    * {{ upperCase name }} ACTIONS FROM INPUT STATE SET
+ *
+ */
+export function {{name}}ActionAddSetFormState(input) {
+  console.log("in {{name}}ActionAddSetFormState in ACTION :: input :::", input);
+  return {
+    type: {{ upperCase name }}_CONST_ADD_FORM_INPUT,
+    input
+  };
+}
+/*
+ *
+    * {{ upperCase name }} ACTIONS FROM INPUT STATE RESET
+ *
+ */
+export function {{name}}ActionAddFormInputReset() {
+  console.log(
+    "in {{name}}ActionAddFormInputReset in ACTION is called without any parameter"
+  );
+  return {
+    type: {{ upperCase name }}_CONST_ADD_FORM_RESET
+  };
+}
+
+// ############# NOT ACTIVE ACTION YET ################
+/*
+ *
+    * {{ upperCase name }} ACTIONS MODEL CHANGE
+ *
+ */
+export function {{name}}ActionAddChangeModel({ model }) {
+  console.log("in {{name}}ActionAddChangeModel in ACTION :: model :::", model);
+  return {
+    type: {{ upperCase name }}_CONST_ADD_MODEL,
+    model
+  };
+}
+/*
+ *
+ * {{ upperCase name }} ACTIONS FORM STRUCTURE SET STATE
+ *
+ */
+export function {{name}}ActionAddFormStructure(data) {
+  console.log("in {{name}}ActionAddFormStructure in ACTION :: data :::", data);
+  return {
+    type: {{ upperCase name }}_CONST_ADD_FORM_STRUCTURE,
+    data
+  };
+}
+// ############# NOT ACTIVE ACTION YET ################
