@@ -10,7 +10,7 @@ import { FOOD_CONST_APIDATA } from "./constants";
 
 import { foodActionApiDataSuccess, foodActionApiDataError } from "./actions";
 
-const herokuAPIURL = "https://mernaircanteen.herokuapp.com";
+const herokuAPIURL = "https://aframework-api.herokuapp.com";
 const model = "/api/foods";
 const getUrl = process.env.API_URL || herokuAPIURL;
 const url = getUrl + model;

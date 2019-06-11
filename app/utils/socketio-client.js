@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import openSocket from "socket.io-client";
 
-const herokuAPIURL = "https://mernaircanteen.herokuapp.com";
+const herokuAPIURL = "https://aframework-api.herokuapp.com";
 const getUrl = process.env.API_URL || herokuAPIURL;
 console.log("getUrl in Socket is :", getUrl);
 const socket = openSocket(getUrl);

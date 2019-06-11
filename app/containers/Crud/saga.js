@@ -32,7 +32,7 @@ import {
   crudActionDeleteError,
 } from "./actions";
 
-const herokuAPIURL = "https://mernaircanteen.herokuapp.com";
+const herokuAPIURL = "https://aframework-api.herokuapp.com";
 const model = "/api/chefs";
 const getUrl = process.env.API_URL || herokuAPIURL;
 const url = getUrl + model;

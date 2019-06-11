@@ -10,7 +10,7 @@ import { READ_CONST_APIDATA } from "./constants";
 
 import { readActionApiDataSuccess, readActionApiDataError } from "./actions";
 
-const herokuAPIURL = "https://mernaircanteen.herokuapp.com";
+const herokuAPIURL = "https://aframework-api.herokuapp.com";
 const model = "/api/orders";
 const getUrl = process.env.API_URL || herokuAPIURL;
 const url = getUrl + model;

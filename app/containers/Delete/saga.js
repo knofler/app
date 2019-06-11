@@ -11,7 +11,7 @@ import { socket } from "utils/socketio-client";
 import { DELETE_CONST_POST } from "./constants";
 import { deleteActionPostSuccess, deleteActionPostError } from "./actions";
 
-const herokuAPIURL = "https://mernaircanteen.herokuapp.com";
+const herokuAPIURL = "https://aframework-api.herokuapp.com";
 const model = "/api/books";
 const getUrl = process.env.API_URL || herokuAPIURL;
 const url = getUrl + model;
