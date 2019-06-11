@@ -1,14 +1,14 @@
 FROM node:latest
 
-COPY . react_aircanteen/
-# COPY ./aircanteen/app/ react_aircanteen/app
-# COPY ./aircanteen/internals/scripts react_aircanteen/internals/scripts
-# COPY ./aircanteen/package.json react_aircanteen/package.json
-# COPY ./aircanteen/yarn.lock react_aircanteen/yarn.lock
-# COPY .aircanteen/build react_aircanteen/build
-# COPY .aircanteen/server react_aircanteen/server
+COPY . app/
+# COPY ./aircanteen/app/ app/app
+# COPY ./aircanteen/internals/scripts app/internals/scripts
+# COPY ./aircanteen/package.json app/package.json
+# COPY ./aircanteen/yarn.lock app/yarn.lock
+# COPY .aircanteen/build app/build
+# COPY .aircanteen/server app/server
 
-WORKDIR react_aircanteen/
+WORKDIR app/
 
 # ENV NODE_ENV=development API_URL_Docker=test
 
