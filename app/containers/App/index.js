@@ -16,6 +16,7 @@ import FeaturePage from "containers/FeaturePage/Loadable";
 import Food from "containers/Food/Loadable";
 import Chef from "containers/Chef/Loadable";
 import Book from "containers/Book/Loadable";
+import Channel from "containers/Channel/Loadable";
 import Crud from "containers/Crud/Loadable";
 import Order from "containers/Order/Loadable";
 import Read from "containers/Read/Loadable";
@@ -55,6 +56,7 @@ export default function App() {
         <Route path="/food" component={Food} />{" "}
         <Route path="/chef" component={Chef} />{" "}
         <Route path="/book" component={Book} />{" "}
+        <Route path="/channel" component={Channel} />{" "}
         <Route path="/read" component={Read} />{" "}
         {/* <Route path="/pencil" component={Pencil} />{" "} */}
         <Route path="/order" component={Order} />{" "}

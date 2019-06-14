@@ -12,10 +12,10 @@ import { FormattedMessage } from "react-intl";
 import { createStructuredSelector } from "reselect";
 import { compose } from "redux";
 import Card from "components/Card";
-import { foodActionApiData } from "./actions";
 
 import injectSaga from "utils/injectSaga";
 import injectReducer from "utils/injectReducer";
+import { foodActionApiData } from "./actions";
 import { makeSelectFood, makeFoodApiDataSelector } from "./selectors";
 import reducer from "./reducer";
 import saga from "./saga";
@@ -27,6 +27,7 @@ export class Food extends React.Component {
     // load API Data
     this.props.foodDispatchApiData("111111", 88, 99);
   }
+
   render() {
     const apiData = { ...this.props.foodPropsApiData };
     console.log("apiData:: ", apiData);
@@ -54,21 +55,21 @@ export class Food extends React.Component {
 }
 
 Food.propTypes = {
-  //dispatch: PropTypes.func.isRequired,
+  // dispatch: PropTypes.func.isRequired,
   foodPropsApiData: PropTypes.array,
-  foodDispatchApiData: PropTypes.func
+  foodDispatchApiData: PropTypes.func,
 };
 
 const mapStateToProps = createStructuredSelector({
-  //food: makeSelectFood(),
-  foodPropsApiData: makeFoodApiDataSelector()
+  // food: makeSelectFood(),
+  foodPropsApiData: makeFoodApiDataSelector(),
 });
 
 function mapDispatchToProps(dispatch) {
   return {
     // dispatch,
     foodDispatchApiData: (tenantId, skip, take) =>
-      dispatch(foodActionApiData(tenantId, skip, take))
+      dispatch(foodActionApiData(tenantId, skip, take)),
   };
 }
 

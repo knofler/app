@@ -2,7 +2,7 @@
 
 /**
  *
- * Book
+ * Channel
  *
  */
 
@@ -22,90 +22,79 @@ import SearchBox from "components/SearchBox";
 import injectSaga from "utils/injectSaga";
 import injectReducer from "utils/injectReducer";
 import { socket, subscribeToTimer } from "utils/socketio-client";
-import {
-  bookActionApiData,
-  bookActionCreateChannel,
-  bookActionCreateInput,
-  bookActionStartStrean,
-  bookActionStopStream,
-} from "./actions";
+import { channelActionApiData } from "./actions";
 
-import {
-  // makeSelectBook,
-  makeBookApiDataSelector,
-  makeBookGetChannelSelector,
-  makeBookGetAWSResponseSelector,
-  makeBookGetInputSelector
-} from "./selectors";
+import { makeSelectChannel, makeChannelApiDataSelector } from "./selectors";
 import reducer from "./reducer";
 import saga from "./saga";
 import messages from "./messages";
-import BookForm from "./mocks/dummyData";
-import "./Book.css";
+import ChannelForm from "./mocks/dummyData";
+import "./Channel.css";
 
 /* eslint-disable react/prefer-stateless-function */
-export class Book extends React.Component {
+export class Channel extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       add: false,
-      createChannel: false,
       update: false,
       delete: false,
       read: true,
-      model: "books",
-      mediaModel: "create/channel",
-      formStructure: BookForm,
+      model: "channels",
+      formStructure: ChannelForm,
       data: [],
       searchTerm: "",
       id: "",
-      timestamp: "no timestamp yet",
+      timestamp: "no timestamp yet"
     };
-    // subscribeToTimer((err, timestamp) =>
-    //   this.setState({
-    //     timestamp
-    //   })
-    // );
+    subscribeToTimer((err, timestamp) =>
+      this.setState({
+        timestamp
+      })
+    );
   }
 
   componentDidMount() {
     // load API Data
-    this.props.bookDispatchApiData({
-      model: this.state.model,
+    this.props.channelDispatchApiData({
+      model: this.state.model
     });
     socket.on("get_add_data", data => {
       console.log("add data recieved", data);
-      this.props.bookDispatchApiData({
-        model: this.state.model,
+      this.props.channelDispatchApiData({
+        model: this.state.model
       });
     });
     socket.on("save", data => {
-      console.log("On book:save Add event, socket call", data);
+      console.log("On channel:save Add event, socket call", data);
     });
     socket.on("get_update_data", data => {
       console.log("update data recieved", data);
-      this.props.bookDispatchApiData({
-        model: this.state.model,
+      this.props.channelDispatchApiData({
+        model: this.state.model
       });
     });
     socket.on("get_delete_data", data => {
       console.log("delete data recieved", data);
-      this.props.bookDispatchApiData({
-        model: this.state.model,
+      this.props.channelDispatchApiData({
+        model: this.state.model
       });
     });
   }
 
   componentWillReceiveProps(nextProps) {
     console.log("next CompWillReciProp Testprops", nextProps);
-    console.log("this CompWillReciProp Testprops", this.props.bookPropsApiData);
-    if (nextProps.bookPropsApiData !== this.props.bookPropsApiData) {
+    console.log(
+      "this CompWillReciProp Testprops",
+      this.props.channelPropsApiData
+    );
+    if (nextProps.channelPropsApiData !== this.props.channelPropsApiData) {
       this.setState({
-        data: nextProps.bookPropsApiData,
+        data: nextProps.channelPropsApiData
       });
     } else {
       this.setState({
-        data: this.props.bookPropsApiData,
+        data: this.props.channelPropsApiData
       });
     }
   }
@@ -119,15 +108,7 @@ export class Book extends React.Component {
     e.preventDefault();
     this.setState({
       add: true,
-      read: false,
-    });
-  };
-
-  createChannelButton = e => {
-    e.preventDefault();
-    this.setState({
-      createChannel: true,
-      read: false,
+      read: false
     });
   };
 
@@ -139,7 +120,7 @@ export class Book extends React.Component {
     this.setState({
       update: true,
       read: false,
-      id,
+      id
     });
   };
 
@@ -152,14 +133,14 @@ export class Book extends React.Component {
     this.setState({
       delete: true,
       read: false,
-      id,
+      id
     });
     // console.log("Delete is :", <Delete />);
   };
 
   searchFunc = e => {
     this.setState({
-      searchTerm: e.target.value,
+      searchTerm: e.target.value
     });
   };
 
@@ -167,16 +148,8 @@ export class Book extends React.Component {
     this.setState({
       read: true,
       add: false,
-      createChannel: false,
       update: false,
       delete: false
-    });
-  };
-
-  createChannel = (channel, e) => {
-    e.preventDefault();
-    this.props.bookDispatchCreateChannel({
-      channel,
     });
   };
 
@@ -185,8 +158,8 @@ export class Book extends React.Component {
       return (
         <div>
           <Helmet>
-            <title>Book</title>
-            <meta name="description" content="Description of Book" />
+            <title>Channel</title>
+            <meta name="description" content="Description of Channel" />
           </Helmet>
           <FormattedMessage {...messages.header} />
           <div>
@@ -206,37 +179,12 @@ export class Book extends React.Component {
         </div>
       );
     }
-    if (this.state.createChannel) {
-      return (
-        <div>
-          <Helmet>
-            <title>Book</title>
-            <meta name="description" content="Description of Book" />
-          </Helmet>
-          <FormattedMessage {...messages.header} />
-          <div>
-            <button
-              className="btn btn-info"
-              type="button"
-              onClick={this.backButton}
-            >
-              Back
-            </button>
-          </div>
-          <Create
-            formStructure={this.state.formStructure}
-            model={this.state.mediaModel}
-            deploy={this.state.createChannel}
-          />
-        </div>
-      );
-    }
     if (this.state.update) {
       return (
         <div>
           <Helmet>
-            <title>Book</title>
-            <meta name="description" content="Description of Book" />
+            <title>Channel</title>
+            <meta name="description" content="Description of Channel" />
           </Helmet>
           <FormattedMessage {...messages.header} />
           <div>
@@ -286,8 +234,8 @@ export class Book extends React.Component {
       return (
         <div>
           <Helmet>
-            <title>Book</title>
-            <meta name="description" content="Description of Book" />
+            <title>Channel</title>
+            <meta name="description" content="Description of Channel" />
           </Helmet>
           <FormattedMessage {...messages.header} />
           <div>
@@ -297,24 +245,6 @@ export class Book extends React.Component {
               onClick={e => this.addFormButton(e)}
             >
               ADD Form
-            </button>
-          </div>
-          <div>
-            <button
-              className="btn btn-success"
-              type="button"
-              onClick={e => this.createChannelButton(e)}
-            >
-              AUTO Create Channel
-            </button>
-          </div>
-          <div>
-            <button
-              className="btn btn-danger"
-              type="button"
-              onClick={e => this.createChannel({}, e)}
-            >
-              Create Channel
             </button>
           </div>
           <div>
@@ -330,11 +260,6 @@ export class Book extends React.Component {
               }}
               searchTerm={this.state.searchTerm}
             />
-          </div>
-
-          <div>
-            AWS API Response ::
-            <pre> {JSON.stringify(this.props.bookPropsAWSResponseData)} </pre>
           </div>
 
           <div>
@@ -364,38 +289,22 @@ export class Book extends React.Component {
   }
 }
 
-Book.propTypes = {
-  // dispatch: PropTypes.func.isRequired,
-  bookPropsApiData: PropTypes.array,
-  bookPropsAWSResponseData: PropTypes.object,
-  bookDispatchApiData: PropTypes.func,
-  bookDispatchCreateChannel: PropTypes.func,
-  bookDispatchCreateInput: PropTypes.func,
-  bookDispatchStartStream: PropTypes.func,
-  bookDispatchStopStream: PropTypes.func,
+Channel.propTypes = {
+  //dispatch: PropTypes.func.isRequired,
+  channelPropsApiData: PropTypes.array,
+  channelDispatchApiData: PropTypes.func
 };
 
 const mapStateToProps = createStructuredSelector({
-  // book: makeSelectBook(),
-  bookPropsApiData: makeBookApiDataSelector(),
-  bookPropsAWSResponseData: makeBookGetAWSResponseSelector(),
-  bookPropsChannel: makeBookGetChannelSelector(),
-  bookPropsInput: makeBookGetInputSelector(),
+  //channel: makeSelectChannel(),
+  channelPropsApiData: makeChannelApiDataSelector()
 });
 
 function mapDispatchToProps(dispatch) {
   return {
     // dispatch,
-    bookDispatchApiData: ({ model, id }) =>
-      dispatch(bookActionApiData({ model, id })),
-    bookDispatchCreateChannel: ({ channel }) =>
-      dispatch(bookActionCreateChannel({ channel })),
-    bookDispatchCreateInput: ({ input }) =>
-      dispatch(bookActionCreateInput({ input })),
-    bookDispatchStartStream: ({ start }) =>
-      dispatch(bookActionStartStrean({ start })),
-    bookDispatchStopStream: ({ stop }) =>
-      dispatch(bookActionStopStream({ stop }))
+    channelDispatchApiData: ({ model, id }) =>
+      dispatch(channelActionApiData({ model, id }))
   };
 }
 
@@ -404,11 +313,11 @@ const withConnect = connect(
   mapDispatchToProps
 );
 
-const withReducer = injectReducer({ key: "book", reducer });
-const withSaga = injectSaga({ key: "book", saga });
+const withReducer = injectReducer({ key: "channel", reducer });
+const withSaga = injectSaga({ key: "channel", saga });
 
 export default compose(
   withReducer,
   withSaga,
   withConnect
-)(Book);
+)(Channel);
