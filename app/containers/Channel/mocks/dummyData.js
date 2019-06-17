@@ -6,49 +6,17 @@
 
 const channelFormStructure = [
   {
-    name: "item",
-    type: "text",
-    label: "Item"
+    name: "Name",
+    type: "input",
+    className: "form-control",
+    id: "container-search",
+    label: "Channel Name"
   },
-  {
-    name: "info",
-    type: "text",
-    label: "Info",
-  },
-  {
-    name: "img",
-    type: "text",
-    label: "Img",
-  },
-  {
-    name: "totalCost",
-    type: "number",
-    label: "Total Cost"
-  },
-  {
-    name: "subTotal",
-    type: "number",
-    label: "Sub Total",
-  },
-  {
-    name: "shipping",
-    type: "number",
-    label: "Shipping",
-  },
-  {
-    name: "quantity",
-    type: "text",
-    label: "Quantity"
-  },
-  {
-    name: "location",
-    type: "text",
-    label: "Location",
-  },
-  {
-    name: "ordered_by",
-    type: "text",
-    label: "Ordered By",
-  }
+  // {
+  //   name: "input",
+  //   label: "Inputs",
+  //   type: "select",
+  //   options: ["News", "iView", "Radio"]
+  // }
 ];
 export default channelFormStructure;

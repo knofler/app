@@ -13,8 +13,7 @@ import { initialState } from "./reducer";
  * Direct selector to the create state domain
  */
 
-const selectCreateDomain = state =>  
-  state.get('create', initialState);
+const selectCreateDomain = state => state.get("create", initialState);
 
 /**
  * CREATE_STATE_ADD_PAYLOAD
@@ -27,6 +26,19 @@ const makeCreateAddPayloadSelector = () =>
       substate.get("CREATE_STATE_ADD_PAYLOAD")
     );
     return substate.get("CREATE_STATE_ADD_PAYLOAD");
+  });
+
+/**
+ * CREATE_STATE_ADD_AWS_PAYLOAD
+ */
+
+const makeCreateAddAwsPayloadSelector = () =>
+  createSelector(selectCreateDomain, substate => {
+    console.log(
+      "CREATE_STATE_ADD_AWS_PAYLOAD in SELECTOR:: :::",
+      substate.get("CREATE_STATE_ADD_AWS_PAYLOAD")
+    );
+    return substate.get("CREATE_STATE_ADD_AWS_PAYLOAD");
   });
 
 /**
@@ -53,6 +65,19 @@ const makeCreateAddModelSelector = () =>
       substate.get("CREATE_STATE_ADD_MODEL")
     );
     return substate.get("CREATE_STATE_ADD_MODEL");
+  });
+
+/**
+ * CREATE_STATE_AWS_MODEL
+ */
+
+const makeCreateAwsModelSelector = () =>
+  createSelector(selectCreateDomain, substate => {
+    console.log(
+      "CREATE_STATE_AWS_MODEL in SELECTOR:: :::",
+      substate.get("CREATE_STATE_AWS_MODEL")
+    );
+    return substate.get("CREATE_STATE_AWS_MODEL");
   });
 
 /**
@@ -94,8 +119,10 @@ export default makeSelectCreate;
 export {
   selectCreateDomain,
   makeCreateAddPayloadSelector,
+  makeCreateAddAwsPayloadSelector,
   makeCreateAddInputSelector,
   makeCreateAddModelSelector,
+  makeCreateAwsModelSelector,
   makeCreateAddFormStructureSelector,
   makeCreateAddFormItemResetSelector
 };

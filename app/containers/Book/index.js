@@ -14,7 +14,9 @@ import { FormattedMessage } from "react-intl";
 import { createStructuredSelector } from "reselect";
 import { compose } from "redux";
 import Card from "components/Card";
+import ChannelCard from "components/ChannelCard";
 import Create from "containers/Create/Loadable";
+import MediaLive from "containers/MediaLive/Loadable";
 import Update from "containers/Update/Loadable";
 import Delete from "containers/Delete/Loadable";
 import SearchBox from "components/SearchBox";
@@ -27,7 +29,7 @@ import {
   bookActionCreateChannel,
   bookActionCreateInput,
   bookActionStartStrean,
-  bookActionStopStream,
+  bookActionStopStream
 } from "./actions";
 
 import {
@@ -35,7 +37,7 @@ import {
   makeBookApiDataSelector,
   makeBookGetChannelSelector,
   makeBookGetAWSResponseSelector,
-  makeBookGetInputSelector
+  makeBookGetInputSelector,
 } from "./selectors";
 import reducer from "./reducer";
 import saga from "./saga";
@@ -53,13 +55,13 @@ export class Book extends React.Component {
       update: false,
       delete: false,
       read: true,
-      model: "books",
-      mediaModel: "create/channel",
+      model: "channels",
+      awsModel: "create/channel",
       formStructure: BookForm,
       data: [],
       searchTerm: "",
       id: "",
-      timestamp: "no timestamp yet",
+      timestamp: "no timestamp yet"
     };
     // subscribeToTimer((err, timestamp) =>
     //   this.setState({
@@ -71,12 +73,12 @@ export class Book extends React.Component {
   componentDidMount() {
     // load API Data
     this.props.bookDispatchApiData({
-      model: this.state.model,
+      model: this.state.model
     });
     socket.on("get_add_data", data => {
       console.log("add data recieved", data);
       this.props.bookDispatchApiData({
-        model: this.state.model,
+        model: this.state.model
       });
     });
     socket.on("save", data => {
@@ -85,13 +87,13 @@ export class Book extends React.Component {
     socket.on("get_update_data", data => {
       console.log("update data recieved", data);
       this.props.bookDispatchApiData({
-        model: this.state.model,
+        model: this.state.model
       });
     });
     socket.on("get_delete_data", data => {
       console.log("delete data recieved", data);
       this.props.bookDispatchApiData({
-        model: this.state.model,
+        model: this.state.model
       });
     });
   }
@@ -101,11 +103,11 @@ export class Book extends React.Component {
     console.log("this CompWillReciProp Testprops", this.props.bookPropsApiData);
     if (nextProps.bookPropsApiData !== this.props.bookPropsApiData) {
       this.setState({
-        data: nextProps.bookPropsApiData,
+        data: nextProps.bookPropsApiData
       });
     } else {
       this.setState({
-        data: this.props.bookPropsApiData,
+        data: this.props.bookPropsApiData
       });
     }
   }
@@ -119,7 +121,7 @@ export class Book extends React.Component {
     e.preventDefault();
     this.setState({
       add: true,
-      read: false,
+      read: false
     });
   };
 
@@ -127,7 +129,7 @@ export class Book extends React.Component {
     e.preventDefault();
     this.setState({
       createChannel: true,
-      read: false,
+      read: false
     });
   };
 
@@ -139,7 +141,7 @@ export class Book extends React.Component {
     this.setState({
       update: true,
       read: false,
-      id,
+      id
     });
   };
 
@@ -152,14 +154,14 @@ export class Book extends React.Component {
     this.setState({
       delete: true,
       read: false,
-      id,
+      id
     });
     // console.log("Delete is :", <Delete />);
   };
 
   searchFunc = e => {
     this.setState({
-      searchTerm: e.target.value,
+      searchTerm: e.target.value
     });
   };
 
@@ -169,15 +171,39 @@ export class Book extends React.Component {
       add: false,
       createChannel: false,
       update: false,
-      delete: false
+      delete: false,
     });
   };
 
   createChannel = (channel, e) => {
     e.preventDefault();
     this.props.bookDispatchCreateChannel({
-      channel,
+      channel
     });
+  };
+
+  clickStartChannel = (id, e) => {
+    console.log("clickStartChannel being clicked");
+    e.preventDefault();
+    console.log("e is ", e);
+    console.log("id is ", id);
+    // this.setState({
+    //   update: true,
+    //   read: false,
+    //   id,
+    // });
+  };
+
+  clickStopChannel = (id, e) => {
+    console.log("clickStopChannel being clicked");
+    e.preventDefault();
+    console.log("e is ", e);
+    console.log("id is ", id);
+    // this.setState({
+    //   update: true,
+    //   read: false,
+    //   id,
+    // });
   };
 
   render() {
@@ -223,9 +249,10 @@ export class Book extends React.Component {
               Back
             </button>
           </div>
-          <Create
+          <MediaLive
             formStructure={this.state.formStructure}
-            model={this.state.mediaModel}
+            model={this.state.model}
+            awsModel={this.state.awsModel}
             deploy={this.state.createChannel}
           />
         </div>
@@ -348,12 +375,16 @@ export class Book extends React.Component {
               )
               .map((each, index) => (
                 <div>
-                  <Card
+                  <ChannelCard
                     key={each.id}
                     {...each}
                     id={index}
                     clickEdit={e => this.clickUpdate(each.cuid, e)}
                     clickDel={e => this.clickDelete(each.cuid, e)}
+                    clickStartChannel={e =>
+                      this.clickStartChannel(each.cuid, e)
+                    }
+                    clickStopChannel={e => this.clickStopChannel(each.cuid, e)}
                   />
                 </div>
               ))}
@@ -372,7 +403,7 @@ Book.propTypes = {
   bookDispatchCreateChannel: PropTypes.func,
   bookDispatchCreateInput: PropTypes.func,
   bookDispatchStartStream: PropTypes.func,
-  bookDispatchStopStream: PropTypes.func,
+  bookDispatchStopStream: PropTypes.func
 };
 
 const mapStateToProps = createStructuredSelector({
@@ -380,7 +411,7 @@ const mapStateToProps = createStructuredSelector({
   bookPropsApiData: makeBookApiDataSelector(),
   bookPropsAWSResponseData: makeBookGetAWSResponseSelector(),
   bookPropsChannel: makeBookGetChannelSelector(),
-  bookPropsInput: makeBookGetInputSelector(),
+  bookPropsInput: makeBookGetInputSelector()
 });
 
 function mapDispatchToProps(dispatch) {
@@ -395,7 +426,7 @@ function mapDispatchToProps(dispatch) {
     bookDispatchStartStream: ({ start }) =>
       dispatch(bookActionStartStrean({ start })),
     bookDispatchStopStream: ({ stop }) =>
-      dispatch(bookActionStopStream({ stop }))
+      dispatch(bookActionStopStream({ stop })),
   };
 }
 

@@ -15,6 +15,9 @@ import {
   CREATE_CONST_ADD_POST,
   CREATE_CONST_ADD_ERROR,
   CREATE_CONST_ADD_SUCCESS,
+  CREATE_CONST_ADD_AWS_POST,
+  CREATE_CONST_ADD_AWS_ERROR,
+  CREATE_CONST_ADD_AWS_SUCCESS,
   CREATE_CONST_ADD_FORM_INPUT,
   CREATE_CONST_ADD_FORM_RESET
 } from "./constants";
@@ -24,6 +27,10 @@ export const initialState = fromJS({
   CREATE_STATE_ADD_SUCCESS: false,
   CREATE_STATE_ADD_ERROR: false,
   CREATE_STATE_ADD_MODEL: "N0_MODEL",
+  CREATE_STATE_ADD_AWS_PAYLOAD: {},
+  CREATE_STATE_ADD_AWS_SUCCESS: false,
+  CREATE_STATE_ADD_AWS_ERROR: false,
+  CREATE_STATE_AWS_MODEL: "N0_MODEL",
   CREATE_STATE_ADD_INPUT: {},
   CREATE_STATE_ADD_FORM_RESET: false,
   CREATE_STATE_ADD_FORM_STRUCTURE: [],
@@ -85,6 +92,46 @@ function createReducer(state = initialState, action) {
         .set("CREATE_STATE_ADD_ERROR", false)
         .set("CREATE_STATE_ADD_SUCCESS", true)
         .set("CREATE_STATE_ADD_PAYLOAD", action.payload);
+    case CREATE_CONST_ADD_AWS_POST:
+      console.log("in CREATE_CONST_ADD_AWS_POST in REDUCER :: action::: ", action);
+      console.log(
+        "in CREATE_CONST_ADD_AWS_POST in REDUCER :: action.input ::: ",
+        action.input
+      );
+      console.log(
+        "in CREATE_CONST_ADD_AWS_POST in REDUCER :: action.model ::: ",
+        action.model
+      );
+      console.log(
+        "in CREATE_CONST_ADD_AWS_POST in REDUCER :: action.awsModel ::: ",
+        action.awsModel
+      );
+      return state
+        .set("CREATE_STATE_ADD_MODEL", action.model)
+        .set("CREATE_STATE_ADD_AWS_MODEL", action.awsModel)
+        .set("CREATE_STATE_ADD_INPUT", action.input)
+        .set("CREATE_STATE_ADD_LOADING", true)
+        .set("CREATE_STATE_ADD_ERROR", false)
+        .set("CREATE_STATE_ADD_AWS_ERROR", false);
+    case CREATE_CONST_ADD_AWS_ERROR:
+      console.log(
+        "in CREATE_CONST_ADD_AWS_ERROR in REDUCER,:: error ::: ",
+        action.error
+      );
+      return state
+        .set("CREATE_STATE_ADD_LOADING", false)
+        .set("CREATE_STATE_ADD_AWS_ERROR", action.awsError)
+        .set("CREATE_STATE_ADD_ERROR", action.error);
+    case CREATE_CONST_ADD_AWS_SUCCESS:
+      console.log(
+        "In CREATE_CONST_ADD_AWS_SUCCESS in REDUCER,:: payload :::",
+        action.payload
+      );
+      return state
+        .set("CREATE_STATE_ADD_LOADING", false)
+        .set("CREATE_STATE_ADD_AWS_ERROR", false)
+        .set("CREATE_STATE_ADD_AWS_SUCCESS", true)
+        .set("CREATE_STATE_ADD_AWS_PAYLOAD", action.awsPayload);
     case CREATE_CONST_ADD_FORM_INPUT:
       console.log(
         "in CREATE_CONST_ADD_FORM_INPUT in REDUCER :: action::: ",
@@ -97,7 +144,8 @@ function createReducer(state = initialState, action) {
       return state
         .set("CREATE_STATE_ADD_INPUT", action.input)
         .set("CREATE_STATE_ADD_LOADING", true)
-        .set("CREATE_STATE_ADD_ERROR", false);
+        .set("CREATE_STATE_ADD_ERROR", false)
+        .set("CREATE_STATE_ADD_AWS_ERROR", false);
 
     case CREATE_CONST_ADD_FORM_RESET:
       console.log(

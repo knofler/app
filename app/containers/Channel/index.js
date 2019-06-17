@@ -14,7 +14,9 @@ import { FormattedMessage } from "react-intl";
 import { createStructuredSelector } from "reselect";
 import { compose } from "redux";
 import Card from "components/Card";
+import ChannelCard from "components/ChannelCard";
 import Create from "containers/Create/Loadable";
+import MediaLive from "containers/MediaLive/Loadable";
 import Update from "containers/Update/Loadable";
 import Delete from "containers/Delete/Loadable";
 import SearchBox from "components/SearchBox";
@@ -37,10 +39,12 @@ export class Channel extends React.Component {
     super(props);
     this.state = {
       add: false,
+      createChannel: false,
       update: false,
       delete: false,
       read: true,
       model: "channels",
+      awsModel: "create/channel",
       formStructure: ChannelForm,
       data: [],
       searchTerm: "",
@@ -148,9 +152,42 @@ export class Channel extends React.Component {
     this.setState({
       read: true,
       add: false,
+      createChannel: false,
       update: false,
       delete: false
     });
+  };
+
+  createChannelButton = e => {
+    e.preventDefault();
+    this.setState({
+      createChannel: true,
+      read: false
+    });
+  };
+
+  clickStartChannel = (id, e) => {
+    console.log("clickStartChannel being clicked");
+    e.preventDefault();
+    console.log("e is ", e);
+    console.log("id is ", id);
+    // this.setState({
+    //   update: true,
+    //   read: false,
+    //   id,
+    // });
+  };
+
+  clickStopChannel = (id, e) => {
+    console.log("clickStopChannel being clicked");
+    e.preventDefault();
+    console.log("e is ", e);
+    console.log("id is ", id);
+    // this.setState({
+    //   update: true,
+    //   read: false,
+    //   id,
+    // });
   };
 
   render() {
@@ -175,6 +212,32 @@ export class Channel extends React.Component {
             formStructure={this.state.formStructure}
             model={this.state.model}
             deploy={this.state.add}
+          />
+        </div>
+      );
+    }
+    if (this.state.createChannel) {
+      return (
+        <div>
+          <Helmet>
+            <title>Book</title>
+            <meta name="description" content="Description of Book" />
+          </Helmet>
+          <FormattedMessage {...messages.header} />
+          <div>
+            <button
+              className="btn btn-info"
+              type="button"
+              onClick={this.backButton}
+            >
+              Back
+            </button>
+          </div>
+          <MediaLive
+            formStructure={this.state.formStructure}
+            model={this.state.model}
+            awsModel={this.state.awsModel}
+            deploy={this.state.createChannel}
           />
         </div>
       );
@@ -238,13 +301,22 @@ export class Channel extends React.Component {
             <meta name="description" content="Description of Channel" />
           </Helmet>
           <FormattedMessage {...messages.header} />
-          <div>
+          {/* <div>
             <button
               className="btn btn-primary"
               type="button"
               onClick={e => this.addFormButton(e)}
             >
               ADD Form
+            </button>
+          </div> */}
+          <div>
+            <button
+              className="btn btn-success"
+              type="button"
+              onClick={e => this.createChannelButton(e)}
+            >
+              Create Channel
             </button>
           </div>
           <div>
@@ -266,19 +338,23 @@ export class Channel extends React.Component {
             {this.state.data
               .filter(
                 each =>
-                  `${each.item} 
+                  `${each.Name} 
                    ${each.info}`
                     .toUpperCase()
                     .indexOf(this.state.searchTerm.toUpperCase()) >= 0
               )
               .map((each, index) => (
                 <div>
-                  <Card
+                  <ChannelCard
                     key={each.id}
                     {...each}
                     id={index}
                     clickEdit={e => this.clickUpdate(each.cuid, e)}
                     clickDel={e => this.clickDelete(each.cuid, e)}
+                    clickStartChannel={e =>
+                      this.clickStartChannel(each.cuid, e)
+                    }
+                    clickStopChannel={e => this.clickStopChannel(each.cuid, e)}
                   />
                 </div>
               ))}
@@ -290,13 +366,13 @@ export class Channel extends React.Component {
 }
 
 Channel.propTypes = {
-  //dispatch: PropTypes.func.isRequired,
+  // dispatch: PropTypes.func.isRequired,
   channelPropsApiData: PropTypes.array,
   channelDispatchApiData: PropTypes.func
 };
 
 const mapStateToProps = createStructuredSelector({
-  //channel: makeSelectChannel(),
+  // channel: makeSelectChannel(),
   channelPropsApiData: makeChannelApiDataSelector()
 });
 
