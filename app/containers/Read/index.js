@@ -16,6 +16,8 @@ import { compose } from "redux";
 import Card from "components/Card";
 import Create from "containers/Create/Loadable";
 import Update from "containers/Update/Loadable";
+import Delete from "containers/Delete/Loadable";
+import SearchBox from "components/SearchBox";
 
 import injectSaga from "utils/injectSaga";
 import injectReducer from "utils/injectReducer";
@@ -36,8 +38,12 @@ export class Read extends React.Component {
     this.state = {
       add: false,
       update: false,
-      deploy: true,
+      delete: false,
+      read: true,
+      model: "orders",
+      formStructure: ReadForm,
       data: [],
+      searchTerm: "",
       id: "",
       timestamp: "no timestamp yet"
     };
@@ -51,12 +57,12 @@ export class Read extends React.Component {
   componentDidMount() {
     // load API Data
     this.props.readDispatchApiData({
-      model: "orders"
+      model: this.state.model
     });
     socket.on("get_add_data", data => {
       console.log("add data recieved", data);
       this.props.readDispatchApiData({
-        model: "orders"
+        model: this.state.model
       });
     });
     socket.on("save", data => {
@@ -65,13 +71,13 @@ export class Read extends React.Component {
     socket.on("get_update_data", data => {
       console.log("update data recieved", data);
       this.props.readDispatchApiData({
-        model: "orders"
+        model: this.state.model
       });
     });
     socket.on("get_delete_data", data => {
       console.log("delete data recieved", data);
       this.props.readDispatchApiData({
-        model: "orders"
+        model: this.state.model
       });
     });
   }
@@ -99,7 +105,7 @@ export class Read extends React.Component {
     e.preventDefault();
     this.setState({
       add: true,
-      deploy: false
+      read: false
     });
   };
 
@@ -110,7 +116,7 @@ export class Read extends React.Component {
     console.log("id is ", id);
     this.setState({
       update: true,
-      deploy: false,
+      read: false,
       id
     });
   };
@@ -120,17 +126,27 @@ export class Read extends React.Component {
     e.preventDefault();
     console.log("e is ", e);
     console.log("id is ", id);
-    alert("You sure you want to delete?");
+    // alert("You sure you want to delete?");
     this.setState({
+      delete: true,
+      read: false,
       id
+    });
+    // console.log("Delete is :", <Delete />);
+  };
+
+  searchFunc = e => {
+    this.setState({
+      searchTerm: e.target.value
     });
   };
 
   backButton = () => {
     this.setState({
-      deploy: true,
+      read: true,
       add: false,
-      update: false
+      update: false,
+      delete: false
     });
   };
 
@@ -144,13 +160,17 @@ export class Read extends React.Component {
           </Helmet>
           <FormattedMessage {...messages.header} />
           <div>
-            <button type="button" onClick={this.backButton}>
+            <button
+              className="btn btn-info"
+              type="button"
+              onClick={this.backButton}
+            >
               Back
             </button>
           </div>
           <Create
-            formStructure={ReadForm}
-            model="orders"
+            formStructure={this.state.formStructure}
+            model={this.state.model}
             deploy={this.state.add}
           />
         </div>
@@ -165,20 +185,49 @@ export class Read extends React.Component {
           </Helmet>
           <FormattedMessage {...messages.header} />
           <div>
-            <button type="button" onClick={this.backButton}>
+            <button
+              className="btn btn-warning"
+              type="button"
+              onClick={this.backButton}
+            >
               Back
             </button>
           </div>
           <Update
             id={this.state.id}
-            formStructure={ReadForm}
-            model="orders"
+            formStructure={this.state.formStructure}
+            model={this.state.model}
             deploy={this.state.update}
           />
         </div>
       );
     }
-    if (this.state.deploy) {
+    if (this.state.delete) {
+      return (
+        <div>
+          <Helmet>
+            <title>Book</title>
+            <meta name="description" content="Description of Book" />
+          </Helmet>
+          <FormattedMessage {...messages.header} />
+          <div>
+            <button
+              className="btn btn-danger"
+              type="button"
+              onClick={this.backButton}
+            >
+              Back
+            </button>
+          </div>
+          <Delete
+            id={this.state.id}
+            model={this.state.model}
+            deploy={this.state.delete}
+          />
+        </div>
+      );
+    }
+    if (this.state.read) {
       return (
         <div>
           <Helmet>
@@ -187,7 +236,11 @@ export class Read extends React.Component {
           </Helmet>
           <FormattedMessage {...messages.header} />
           <div>
-            <button type="button" onClick={e => this.addFormButton(e)}>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={e => this.addFormButton(e)}
+            >
               ADD Form
             </button>
           </div>
@@ -198,16 +251,34 @@ export class Read extends React.Component {
           </div>
 
           <div>
-            {this.state.data.map(each => (
-              <div>
-                <Card
-                  key={each.id}
-                  {...each}
-                  clickEdit={e => this.clickUpdate(each.cuid, e)}
-                  clickDel={e => this.clickDelete(each.cuid, e)}
-                />
-              </div>
-            ))}
+            <SearchBox
+              searchFunc={e => {
+                this.searchFunc(e);
+              }}
+              searchTerm={this.state.searchTerm}
+            />
+          </div>
+
+          <div>
+            {this.state.data
+              .filter(
+                each =>
+                  `${each.item} 
+                   ${each.info}`
+                    .toUpperCase()
+                    .indexOf(this.state.searchTerm.toUpperCase()) >= 0
+              )
+              .map((each, index) => (
+                <div>
+                  <Card
+                    key={each.id}
+                    {...each}
+                    id={index}
+                    clickEdit={e => this.clickUpdate(each.cuid, e)}
+                    clickDel={e => this.clickDelete(each.cuid, e)}
+                  />
+                </div>
+              ))}
           </div>
         </div>
       );

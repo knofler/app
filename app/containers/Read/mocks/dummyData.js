@@ -6,7 +6,7 @@
 
 const readFormStructure = [
   {
-    name: "items",
+    name: "item",
     type: "text",
     label: "Item"
   },

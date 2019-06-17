@@ -29,19 +29,6 @@ const makeCreateAddPayloadSelector = () =>
   });
 
 /**
- * CREATE_STATE_ADD_AWS_PAYLOAD
- */
-
-const makeCreateAddAwsPayloadSelector = () =>
-  createSelector(selectCreateDomain, substate => {
-    console.log(
-      "CREATE_STATE_ADD_AWS_PAYLOAD in SELECTOR:: :::",
-      substate.get("CREATE_STATE_ADD_AWS_PAYLOAD")
-    );
-    return substate.get("CREATE_STATE_ADD_AWS_PAYLOAD");
-  });
-
-/**
  * CREATE_STATE_ADD_INPUT
  */
 
@@ -65,19 +52,6 @@ const makeCreateAddModelSelector = () =>
       substate.get("CREATE_STATE_ADD_MODEL")
     );
     return substate.get("CREATE_STATE_ADD_MODEL");
-  });
-
-/**
- * CREATE_STATE_AWS_MODEL
- */
-
-const makeCreateAwsModelSelector = () =>
-  createSelector(selectCreateDomain, substate => {
-    console.log(
-      "CREATE_STATE_AWS_MODEL in SELECTOR:: :::",
-      substate.get("CREATE_STATE_AWS_MODEL")
-    );
-    return substate.get("CREATE_STATE_AWS_MODEL");
   });
 
 /**
@@ -119,10 +93,8 @@ export default makeSelectCreate;
 export {
   selectCreateDomain,
   makeCreateAddPayloadSelector,
-  makeCreateAddAwsPayloadSelector,
   makeCreateAddInputSelector,
   makeCreateAddModelSelector,
-  makeCreateAwsModelSelector,
   makeCreateAddFormStructureSelector,
   makeCreateAddFormItemResetSelector
 };

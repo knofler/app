@@ -12,11 +12,7 @@ import {
   CREATE_CONST_ADD_POST,
   CREATE_CONST_ADD_SUCCESS,
   CREATE_CONST_ADD_ERROR,
-  CREATE_CONST_ADD_AWS_POST,
-  CREATE_CONST_ADD_AWS_SUCCESS,
-  CREATE_CONST_ADD_AWS_ERROR,
   CREATE_CONST_ADD_MODEL,
-  CREATE_CONST_ADD_AWS_MODEL,
   CREATE_CONST_ADD_FORM_STRUCTURE,
   CREATE_CONST_ADD_FORM_INPUT,
   CREATE_CONST_ADD_FORM_RESET
@@ -45,15 +41,13 @@ export function defaultAction() {
     * CREATE ACTIONS ADD MODEL,FORM STRUCTURE AND INITIIAL FORM INPUT
  *
  */
-export function createActionAdd({ struct, model ,aws="NO_MODEL"}) {
+export function createActionAdd({ struct, model }) {
   console.log("in createActionAdd in ACTION :: struct :::", struct);
   console.log("in createActionAdd in ACTION :: model :::", model);
-  console.log("in createActionAdd in ACTION :: aws :::", aws);
   return {
     type: CREATE_CONST_ADD,
     struct,
-    model,
-    aws
+    model
   };
 }
 /*
@@ -67,10 +61,9 @@ export function createActionAddPost({ input, model }) {
   return {
     type: CREATE_CONST_ADD_POST,
     input,
-    model,
+    model
   };
 }
-
 /*
  *
     * CREATE ACTIONS API CALL ERROR HANDLING
@@ -95,48 +88,6 @@ export function createActionAddSuccess(payload) {
     payload
   };
 }
-
-/*
- *
-    * CREATE ACTIONS AWS API POST CALL WITH FORM INPUT
- *
- */
-export function createActionAddAwsPost({ input, model, awsModel }) {
-  console.log("in createActionAddAwsPost in ACTION :: input :::", input);
-  console.log("in createActionAddAwsPost in ACTION :: model :::", model);
-  console.log("in createActionAddAwsPost in ACTION :: awsModel :::", awsModel);
-  return {
-    type: CREATE_CONST_ADD_AWS_POST,
-    input,
-    model,
-    awsModel
-  };
-}
-/*
- *
-    * CREATE ACTIONS AWS API CALL ERROR HANDLING
- *
- */
-export function createActionAddAwsError(awsError) {
-  console.log("in createActionAddAwsError in ACTION :: awsError :::", awsError);
-  return {
-    type: CREATE_CONST_ADD_AWS_ERROR,
-    awsError
-  };
-}
-/*
- *
-    * CREATE ACTIONS AWS API CALL SUCCESS CALL BACK FUNCTIONS
- *
- */
-export function createActionAddAwsSuccess(awsPayload) {
-  console.log("in createActionAddAwsSuccess in ACTION :: awsPayload :::", awsPayload);
-  return {
-    type: CREATE_CONST_ADD_AWS_SUCCESS,
-    awsPayload
-  };
-}
-
 /*
  *
     * CREATE ACTIONS FROM INPUT STATE SET
