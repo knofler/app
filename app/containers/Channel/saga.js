@@ -10,11 +10,11 @@ import { CHANNEL_CONST_APIDATA } from "./constants";
 
 import {
   channelActionApiDataSuccess,
-  channelActionApiDataError
+  channelActionApiDataError,
 } from "./actions";
 
 const herokuAPIURL = "https://aframework-api.herokuapp.com";
-const model = "/api/channels";
+const model = "/api/workflows";
 const getUrl = process.env.API_URL || herokuAPIURL;
 const url = getUrl + model;
 
@@ -22,13 +22,13 @@ console.log("process.env.API_URL", process.env.API_URL);
 console.log("herokuAPIURL is", herokuAPIURL);
 console.log("url is ", url);
 
-//Load Functions on Event Change
+// Load Functions on Event Change
 
 function* channelSagaApiData() {
   yield takeLatest(CHANNEL_CONST_APIDATA, fetchChannelApiData);
 }
 
-//Fetch Functions for API interaction
+// Fetch Functions for API interaction
 
 function* fetchChannelApiData(action) {
   try {

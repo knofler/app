@@ -68,14 +68,7 @@ function* fetchmediaLiveAddAws(action) {
       const mediaLiveAWSUrl = `${getUrl}/api/${action.awsModel}`;
       console.log("mediaLiveUrl:", mediaLiveUrl);
       console.log("mediaLiveAWSUrl:", mediaLiveAWSUrl);
-      const response = yield call(fetch, mediaLiveUrl, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(action.input)
-      });
+
       const awsResponse = yield call(fetch, mediaLiveAWSUrl, {
         method: "POST",
         headers: {
@@ -84,16 +77,48 @@ function* fetchmediaLiveAddAws(action) {
         },
         body: JSON.stringify(action.input)
       });
-      const responseBody = yield response.json();
       const awsResponseBody = yield awsResponse.json();
-      console.log(
-        "responseBody of MEDIALIVE_CONST_ADD_POST_AWS in saga is",
-        responseBody
-      );
       console.log(
         "awsResponseBody of MEDIALIVE_CONST_ADD_POST_AWS in saga is",
         awsResponseBody
       );
+
+      const response = yield call(fetch, mediaLiveUrl, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          channelId: awsResponseBody.message.channelData.Channel.Id,
+          channelName: awsResponseBody.message.channelData.Channel.Name,
+          channelClass:
+            awsResponseBody.message.channelData.Channel.ChannelClass,
+          inputId: awsResponseBody.message.inputData.Input.Id,
+          inputName: awsResponseBody.message.inputData.Input.Name,
+          inputClass: awsResponseBody.message.inputData.Input.InputClass,
+          inputType: awsResponseBody.message.inputData.Input.Type,
+          destinationsOneIp:
+            awsResponseBody.message.inputData.Input.Destinations[0].Ip,
+          destinationsOnePort:
+            awsResponseBody.message.inputData.Input.Destinations[0].Port,
+          destinationsOneUrl:
+            awsResponseBody.message.inputData.Input.Destinations[0].Url,
+          destinationsTwoIp:
+            awsResponseBody.message.inputData.Input.Destinations[1].Ip,
+          destinationsTwoPort:
+            awsResponseBody.message.inputData.Input.Destinations[1].Port,
+          destinationsTwoUrl:
+            awsResponseBody.message.inputData.Input.Destinations[1].Url
+        })
+      });
+
+      const responseBody = yield response.json();
+      console.log(
+        "responseBody of MEDIALIVE_CONST_ADD_POST_AWS in saga is",
+        responseBody
+      );
+
       if (!responseBody.errors) {
         window.localStorage.setItem(
           "MediaLive-data",

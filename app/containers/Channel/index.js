@@ -30,7 +30,9 @@ import { makeSelectChannel, makeChannelApiDataSelector } from "./selectors";
 import reducer from "./reducer";
 import saga from "./saga";
 import messages from "./messages";
-import ChannelForm from "./mocks/dummyData";
+import ChannelForm from "./mocks/dummyDataChannel";
+import InputForm from "./mocks/dummyDataInput";
+import WorkflowForm from "./mocks/dummyDataWorkflow";
 import "./Channel.css";
 
 /* eslint-disable react/prefer-stateless-function */
@@ -38,35 +40,43 @@ export class Channel extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      add: false,
-      createChannel: false,
-      update: false,
-      delete: false,
-      read: true,
-      model: "channels",
-      awsModel: "create/channel",
-      formStructure: ChannelForm,
       data: [],
       searchTerm: "",
       id: "",
-      timestamp: "no timestamp yet"
+      timestamp: "no timestamp yet",
+      add: false,
+      update: false,
+      delete: false,
+      read: true,
+      modelInput: "inputs",
+      awsModelInput: "create/input",
+      createInput: false,
+      formStructureInput: InputForm,
+      modelChannel: "channels",
+      awsModelChannel: "create/channel",
+      formStructureChannel: ChannelForm,
+      createChannel: false,
+      modelWorkflow: "workflows",
+      awsModelWorkflow: "create/workflow",
+      formStructureWorkflow: WorkflowForm,
+      createWorkflow: false,
     };
-    subscribeToTimer((err, timestamp) =>
-      this.setState({
-        timestamp
-      })
-    );
+    // subscribeToTimer((err, timestamp) =>
+    //   this.setState({
+    //     timestamp
+    //   })
+    // );
   }
 
   componentDidMount() {
     // load API Data
     this.props.channelDispatchApiData({
-      model: this.state.model
+      model: this.state.model,
     });
     socket.on("get_add_data", data => {
       console.log("add data recieved", data);
       this.props.channelDispatchApiData({
-        model: this.state.model
+        model: this.state.model,
       });
     });
     socket.on("save", data => {
@@ -75,13 +85,13 @@ export class Channel extends React.Component {
     socket.on("get_update_data", data => {
       console.log("update data recieved", data);
       this.props.channelDispatchApiData({
-        model: this.state.model
+        model: this.state.model,
       });
     });
     socket.on("get_delete_data", data => {
       console.log("delete data recieved", data);
       this.props.channelDispatchApiData({
-        model: this.state.model
+        model: this.state.model,
       });
     });
   }
@@ -94,11 +104,11 @@ export class Channel extends React.Component {
     );
     if (nextProps.channelPropsApiData !== this.props.channelPropsApiData) {
       this.setState({
-        data: nextProps.channelPropsApiData
+        data: nextProps.channelPropsApiData,
       });
     } else {
       this.setState({
-        data: this.props.channelPropsApiData
+        data: this.props.channelPropsApiData,
       });
     }
   }
@@ -112,7 +122,7 @@ export class Channel extends React.Component {
     e.preventDefault();
     this.setState({
       add: true,
-      read: false
+      read: false,
     });
   };
 
@@ -124,7 +134,7 @@ export class Channel extends React.Component {
     this.setState({
       update: true,
       read: false,
-      id
+      id,
     });
   };
 
@@ -137,14 +147,14 @@ export class Channel extends React.Component {
     this.setState({
       delete: true,
       read: false,
-      id
+      id,
     });
     // console.log("Delete is :", <Delete />);
   };
 
   searchFunc = e => {
     this.setState({
-      searchTerm: e.target.value
+      searchTerm: e.target.value,
     });
   };
 
@@ -152,9 +162,19 @@ export class Channel extends React.Component {
     this.setState({
       read: true,
       add: false,
+      createInput: false,
       createChannel: false,
+      createWorkflow: false,
       update: false,
-      delete: false
+      delete: false,
+    });
+  };
+
+  createInputButton = e => {
+    e.preventDefault();
+    this.setState({
+      createInput: true,
+      read: false,
     });
   };
 
@@ -162,7 +182,15 @@ export class Channel extends React.Component {
     e.preventDefault();
     this.setState({
       createChannel: true,
-      read: false
+      read: false,
+    });
+  };
+
+  createWorkflowButton = e => {
+    e.preventDefault();
+    this.setState({
+      createWorkflow: true,
+      read: false,
     });
   };
 
@@ -216,6 +244,32 @@ export class Channel extends React.Component {
         </div>
       );
     }
+    if (this.state.createInput) {
+      return (
+        <div>
+          <Helmet>
+            <title>Book</title>
+            <meta name="description" content="Description of Book" />
+          </Helmet>
+          <FormattedMessage {...messages.header} />
+          <div>
+            <button
+              className="btn btn-info"
+              type="button"
+              onClick={this.backButton}
+            >
+              Back
+            </button>
+          </div>
+          <MediaLive
+            formStructure={this.state.formStructureInput}
+            model={this.state.modelInput}
+            awsModel={this.state.awsModelInput}
+            deploy={this.state.createInput}
+          />
+        </div>
+      );
+    }
     if (this.state.createChannel) {
       return (
         <div>
@@ -234,10 +288,36 @@ export class Channel extends React.Component {
             </button>
           </div>
           <MediaLive
-            formStructure={this.state.formStructure}
-            model={this.state.model}
-            awsModel={this.state.awsModel}
+            formStructure={this.state.formStructureChannel}
+            model={this.state.modelChannel}
+            awsModel={this.state.awsModelChannel}
             deploy={this.state.createChannel}
+          />
+        </div>
+      );
+    }
+    if (this.state.createWorkflow) {
+      return (
+        <div>
+          <Helmet>
+            <title>Book</title>
+            <meta name="description" content="Description of Book" />
+          </Helmet>
+          <FormattedMessage {...messages.header} />
+          <div>
+            <button
+              className="btn btn-info"
+              type="button"
+              onClick={this.backButton}
+            >
+              Back
+            </button>
+          </div>
+          <MediaLive
+            formStructure={this.state.formStructureWorkflow}
+            model={this.state.modelWorkflow}
+            awsModel={this.state.awsModelWorkflow}
+            deploy={this.state.createWorkflow}
           />
         </div>
       );
@@ -261,8 +341,8 @@ export class Channel extends React.Component {
           </div>
           <Update
             id={this.state.id}
-            formStructure={this.state.formStructure}
-            model={this.state.model}
+            formStructure={this.state.formStructureChannel}
+            model={this.state.modelChannel}
             deploy={this.state.update}
           />
         </div>
@@ -287,7 +367,7 @@ export class Channel extends React.Component {
           </div>
           <Delete
             id={this.state.id}
-            model={this.state.model}
+            model={this.state.modelWorkflow}
             deploy={this.state.delete}
           />
         </div>
@@ -310,7 +390,21 @@ export class Channel extends React.Component {
               ADD Form
             </button>
           </div> */}
-          <div>
+          <div className="awsCreate">
+            <button
+              className="btn btn-info"
+              type="button"
+              onClick={e => this.createInputButton(e)}
+            >
+              Create Input
+            </button>
+          </div>
+          {/* <div>
+            <p className="App-intro">
+              This is the timer value: {this.state.timestamp}
+            </p>
+          </div> */}
+          <div className="awsCreate">
             <button
               className="btn btn-success"
               type="button"
@@ -319,11 +413,22 @@ export class Channel extends React.Component {
               Create Channel
             </button>
           </div>
-          <div>
+
+          <div className="awsCreate">
+            <button
+              className="btn btn-warning"
+              type="button"
+              onClick={e => this.createWorkflowButton(e)}
+            >
+              Create Workflow
+            </button>
+          </div>
+
+          {/* <div>
             <p className="App-intro">
               This is the timer value: {this.state.timestamp}
             </p>
-          </div>
+          </div> */}
 
           <div>
             <SearchBox
@@ -368,19 +473,19 @@ export class Channel extends React.Component {
 Channel.propTypes = {
   // dispatch: PropTypes.func.isRequired,
   channelPropsApiData: PropTypes.array,
-  channelDispatchApiData: PropTypes.func
+  channelDispatchApiData: PropTypes.func,
 };
 
 const mapStateToProps = createStructuredSelector({
   // channel: makeSelectChannel(),
-  channelPropsApiData: makeChannelApiDataSelector()
+  channelPropsApiData: makeChannelApiDataSelector(),
 });
 
 function mapDispatchToProps(dispatch) {
   return {
     // dispatch,
     channelDispatchApiData: ({ model, id }) =>
-      dispatch(channelActionApiData({ model, id }))
+      dispatch(channelActionApiData({ model, id })),
   };
 }
 

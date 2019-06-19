@@ -16,10 +16,15 @@ import messages from "./messages";
 class ChannelControl extends React.Component {
   render() {
     return (
-      <div>
-        <FormattedMessage {...messages.header} />
+      <div className="channelCtr">
+        {/* <FormattedMessage {...messages.header} /> */}
         <td>
-          <p data-placement="top" data-toggle="tooltip" title="Start">
+          <p
+            className="tinyBtn"
+            data-placement="top"
+            data-toggle="tooltip"
+            title="Start"
+          >
             <button
               className="btn btn-info btn-xs"
               data-title="Start"
@@ -27,12 +32,17 @@ class ChannelControl extends React.Component {
               data-target="#start"
               onClick={this.props.clickStart}
             >
-              <span className = "glyphicon glyphicon-play" />
+              <span className="glyphicon glyphicon-play" />
             </button>
           </p>
         </td>
         <td>
-          <p data-placement="top" data-toggle="tooltip" title="End">
+          <p
+            className="tinyBtn"
+            data-placement="top"
+            data-toggle="tooltip"
+            title="End"
+          >
             <button
               className="btn btn-danger btn-xs"
               data-title="Stop"
@@ -51,7 +61,7 @@ class ChannelControl extends React.Component {
 
 ChannelControl.propTypes = {
   clickStart: PropTypes.func,
-  clickStop: PropTypes.func
+  clickStop: PropTypes.func,
 };
 
 export default ChannelControl;

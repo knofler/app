@@ -63,7 +63,15 @@ export class Search extends React.Component {
             {this.props.searchPropsApiData
               .filter(
                 each =>
-                  `${each.item} 
+                  `${each.channelName}
+                  ${each.channelId}  
+                  ${each.channelClass}
+                  ${each.inputName}
+                  ${each.inputId}  
+                  ${each.inputClass}
+                  ${each.inputType}
+                  ${each.destinationsOneIp}
+                  ${each.destinationsTwoIp}
                 ${each.info} 
                 ${each.genre} 
                 ${each.suburb}

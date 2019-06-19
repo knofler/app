@@ -16,10 +16,15 @@ import messages from "./messages";
 class CrudControl extends React.Component {
   render() {
     return (
-      <div>
-        <FormattedMessage {...messages.header} />
+      <div className="crudCtr">
+        {/* <FormattedMessage {...messages.header} /> */}
         <td>
-          <p data-placement="top" data-toggle="tooltip" title="Edit">
+          <p
+            className="tinyBtn"
+            data-placement="top"
+            data-toggle="tooltip"
+            title="Edit"
+          >
             <button
               className="btn btn-primary btn-xs"
               data-title="Edit"
@@ -32,7 +37,12 @@ class CrudControl extends React.Component {
           </p>
         </td>
         <td>
-          <p data-placement="top" data-toggle="tooltip" title="Delete">
+          <p
+            className="tinyBtn"
+            data-placement="top"
+            data-toggle="tooltip"
+            title="Delete"
+          >
             <button
               className="btn btn-danger btn-xs"
               data-title="Delete"
