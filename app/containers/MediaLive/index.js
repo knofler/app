@@ -26,17 +26,18 @@ import {
   mediaLiveActionAdd,
   mediaLiveActionAddPost,
   mediaLiveActionAddAwsPost,
+  mediaLiveActionAWSGet,
   mediaLiveActionAddChangeModel,
   mediaLiveActionAddFormStructure,
   mediaLiveActionAddSetFormState,
   mediaLiveActionAddFormInputReset
 } from "./actions";
 import {
-  makeSelectmediaLive,
+  // makeSelectmediaLive,
   makeMediaLiveAddPayloadSelector,
   makeMediaLiveAddAwsPayloadSelector,
+  makeMediaLiveAWSGetPayloadSelector,
   makeMediaLiveAddModelSelector,
-  makeMediaLiveAwsModelSelector,
   makeMediaLiveAddFormStructureSelector,
   makeMediaLiveAddInputSelector,
   makeMediaLiveAddFormItemResetSelector
@@ -62,7 +63,6 @@ export class MediaLive extends React.Component {
   componentDidMount() {
     // On Component Mount, set the form structure and Model
     this.props.mediaLiveDispatchAdd({
-      awsModel: this.props.awsModel,
       model: this.props.model,
       struct: this.props.formStructure
     });
@@ -103,20 +103,17 @@ export class MediaLive extends React.Component {
         this.props.mediaLivePropsAddInput
       );
       // Make API call
-      if (this.props.awsModel == undefined) {
-        console.log("this.props.mediaLiveDispactchAddPost will be executed");
-        this.props.mediaLiveDispatchAddPost({
-          model: this.props.model,
-          input: userInput
-        });
-      } else {
-        console.log("this.props.mediaLiveDispactAddAwsPost will be executed");
-        this.props.mediaLiveDispatchAddAwsPost({
-          model: this.props.model,
-          awsModel: this.props.awsModel,
-          input: userInput
-        });
-      }
+      console.log("this.props.mediaLiveDispactAddAwsPost will be executed");
+
+      this.props.mediaLiveDispatchAddAwsPost({
+        model: this.props.model,
+        input: userInput,
+        apiAction: this.props.apiAction
+      });
+
+      // this.props.mediaLiveDispatchAwsGet({
+      //   model: this.props.model
+      // });
 
       // clear the local form
       this.refs.form.reset();
@@ -141,7 +138,7 @@ export class MediaLive extends React.Component {
             </div>
             <div>
               Injected AWS Action Route is :::
-              <strong> {this.props.mediaLivePropsAwsModel}</strong>
+              <strong> {this.props.mediaLivePropsAddModel}</strong>
             </div>
             <div>
               Form Structure Passed on ::
@@ -224,17 +221,18 @@ MediaLive.propTypes = {
   // dispatch: PropTypes.func.isRequired,
   formStructure: PropTypes.array.isRequired,
   model: PropTypes.string.isRequired,
-  awsModel: PropTypes.string.isRequired,
   deploy: PropTypes.bool.isRequired,
   mediaLiveDispatchAdd: PropTypes.func,
   mediaLiveDispatchAddPost: PropTypes.func,
-  mediaLiveActionAddAwsPost: PropTypes.func,
+  mediaLiveDispatchAddAwsPost: PropTypes.func,
+  mediaLiveDispatchAwsGet: PropTypes.func,
   mediaLiveDispatchAddFormStructure: PropTypes.func,
   mediaLiveDispatchAddChangeModel: PropTypes.func,
   mediaLiveDispatchAddFormInputReset: PropTypes.func,
   mediaLiveDispatchAddSetFormState: PropTypes.func,
   mediaLivePropsAddPayload: PropTypes.object,
   mediaLivePropsAddAwsPayload: PropTypes.object,
+  mediaLivePropsAwsGetPayload: PropTypes.object,
   mediaLivePropsAddInput: PropTypes.object,
   mediaLivePropsAddFormReset: PropTypes.bool
 };
@@ -243,8 +241,8 @@ const mapStateToProps = createStructuredSelector({
   // MediaLive: makeSelectmediaLive(),
   mediaLivePropsAddPayload: makeMediaLiveAddPayloadSelector(),
   mediaLivePropsAddAwsPayload: makeMediaLiveAddAwsPayloadSelector(),
+  mediaLivePropsAwsGetPayload: makeMediaLiveAWSGetPayloadSelector(),
   mediaLivePropsAddModel: makeMediaLiveAddModelSelector(),
-  mediaLivePropsAwsModel: makeMediaLiveAwsModelSelector(),
   mediaLivePropsAddFormStructure: makeMediaLiveAddFormStructureSelector(),
   mediaLivePropsAddInput: makeMediaLiveAddInputSelector(),
   mediaLivePropsAddFormReset: makeMediaLiveAddFormItemResetSelector()
@@ -253,12 +251,14 @@ const mapStateToProps = createStructuredSelector({
 function mapDispatchToProps(dispatch) {
   return {
     // dispatch,
-    mediaLiveDispatchAdd: ({ struct, model, awsModel }) =>
-      dispatch(mediaLiveActionAdd({ struct, model, awsModel })),
+    mediaLiveDispatchAdd: ({ struct, model }) =>
+      dispatch(mediaLiveActionAdd({ struct, model })),
     mediaLiveDispatchAddPost: ({ input, model }) =>
       dispatch(mediaLiveActionAddPost({ input, model })),
-    mediaLiveDispatchAddAwsPost: ({ input, model, awsModel }) =>
-      dispatch(mediaLiveActionAddAwsPost({ input, model, awsModel })),
+    mediaLiveDispatchAwsGet: ({ model, id }) =>
+      dispatch(mediaLiveActionAWSGet({ model, id })),
+    mediaLiveDispatchAddAwsPost: ({ input, model, apiAction }) =>
+      dispatch(mediaLiveActionAddAwsPost({ input, model, apiAction })),
     mediaLiveDispatchAddSetFormState: input =>
       dispatch(mediaLiveActionAddSetFormState(input)),
     mediaLiveDispatchAddFormInputReset: () =>

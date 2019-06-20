@@ -10,10 +10,13 @@ import { all, call, put, takeLatest } from "redux-saga/effects";
 import { socket } from "utils/socketio-client";
 import {
   MEDIALIVE_CONST_ADD_POST,
+  MEDIALIVE_CONST_ADD_AWS_GET,
   MEDIALIVE_CONST_ADD_AWS_POST
 } from "./constants";
 
 import {
+  mediaLiveActionAWSGetSuccess,
+  mediaLiveActionAWSGetError,
   mediaLiveActionAddSuccess,
   mediaLiveActionAddError,
   mediaLiveActionAddAwsSuccess,
@@ -31,15 +34,38 @@ console.log("url is ", url);
 
 // Load Functions on Event Change
 
-function* mediaLiveSagaAddAws() {
-  yield takeLatest(MEDIALIVE_CONST_ADD_AWS_POST, fetchmediaLiveAddAws);
+function* mediaLiveSagaAwsGet() {
+  yield takeLatest(MEDIALIVE_CONST_ADD_AWS_GET, fetchMediaLiveAwsGet);
+}
+
+function* mediaLiveSagaAwsPost() {
+  yield takeLatest(MEDIALIVE_CONST_ADD_AWS_POST, fetchMediaLiveAwsPost);
 }
 
 function* mediaLiveSagaAdd() {
-  yield takeLatest(MEDIALIVE_CONST_ADD_POST, fetchmediaLiveAdd);
+  yield takeLatest(MEDIALIVE_CONST_ADD_POST, fetchMediaLiveAdd);
 }
 
-function* fetchmediaLiveAddAws(action) {
+function* fetchMediaLiveAwsGet(action) {
+  try {
+    // MEDIALIVE_CONST_ADD_AWS_GET event action and api call
+    console.log("MEDIALIVE_CONST_ADD_AWS_GET constant's action :: ", action);
+    const mediaLiveAWSUrl = `${getUrl}/api/aws/${action.model}`;
+    console.log("mediaLiveAWSUrl:", mediaLiveAWSUrl);
+    const response = yield call(fetch, mediaLiveAWSUrl);
+    const responseBody = yield response.json();
+    console.log(
+      "responseBody of MEDIALIVE_CONST_ADD_AWS_GET  in saga is",
+      responseBody
+    );
+    yield put(mediaLiveActionAWSGetSuccess(responseBody.message));
+  } catch (error) {
+    yield put(mediaLiveActionAWSGetError(error));
+  }
+}
+
+function* fetchMediaLiveAwsPost(action) {
+  let dbData = {};
   try {
     // CRUD_CONST_MEDIALIVE event action and api call
     console.log(
@@ -47,25 +73,17 @@ function* fetchmediaLiveAddAws(action) {
       action
     );
     console.log(
-      "MEDIALIVE_CONST_ADD_AWS_POST constant's action.data in saga is:: ",
+      "MEDIALIVE_CONST_ADD_AWS_POST constant's action.input in saga is:: ",
       action.input
     );
     console.log(
       "MEDIALIVE_CONST_ADD_AWS_POST constant's action.model in saga is:: ",
       action.model
     );
-    console.log(
-      "MEDIALIVE_CONST_ADD_AWS_POST constant's action.awsModel in saga is:: ",
-      action.awsModel
-    );
 
-    if (
-      action.input !== undefined &&
-      action.model !== undefined &&
-      action.awsModel !== undefined
-    ) {
+    if (action.input !== undefined && action.model !== undefined) {
       const mediaLiveUrl = `${getUrl}/api/${action.model}`;
-      const mediaLiveAWSUrl = `${getUrl}/api/${action.awsModel}`;
+      const mediaLiveAWSUrl = `${getUrl}/api/aws/${action.model}`;
       console.log("mediaLiveUrl:", mediaLiveUrl);
       console.log("mediaLiveAWSUrl:", mediaLiveAWSUrl);
 
@@ -82,14 +100,11 @@ function* fetchmediaLiveAddAws(action) {
         "awsResponseBody of MEDIALIVE_CONST_ADD_POST_AWS in saga is",
         awsResponseBody
       );
-
-      const response = yield call(fetch, mediaLiveUrl, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+      if (
+        awsResponseBody.message.channelData &&
+        awsResponseBody.message.inputData
+      ) {
+        dbData = {
           channelId: awsResponseBody.message.channelData.Channel.Id,
           channelName: awsResponseBody.message.channelData.Channel.Name,
           channelClass:
@@ -110,9 +125,29 @@ function* fetchmediaLiveAddAws(action) {
             awsResponseBody.message.inputData.Input.Destinations[1].Port,
           destinationsTwoUrl:
             awsResponseBody.message.inputData.Input.Destinations[1].Url
-        })
-      });
+        };
+      }
 
+      let response = {};
+      if (action.apiAction === "POST") {
+        response = yield call(fetch, mediaLiveUrl, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(dbData)
+        });
+      } else if (action.apiAction === "PRE") {
+        response = yield call(fetch, mediaLiveUrl, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(action.input)
+        });
+      }
       const responseBody = yield response.json();
       console.log(
         "responseBody of MEDIALIVE_CONST_ADD_POST_AWS in saga is",
@@ -142,7 +177,7 @@ function* fetchmediaLiveAddAws(action) {
   }
 }
 
-function* fetchmediaLiveAdd(action) {
+function* fetchMediaLiveAdd(action) {
   try {
     // CRUD_CONST_MEDIALIVE event action and api call
     console.log(
@@ -191,5 +226,9 @@ function* fetchmediaLiveAdd(action) {
 // Individual exports for testing
 export default function* mediaLiveSaga() {
   // See example in containers/HomePage/saga.js
-  yield all([mediaLiveSagaAdd(), mediaLiveSagaAddAws()]);
+  yield all([
+    mediaLiveSagaAdd(),
+    mediaLiveSagaAwsPost(),
+    mediaLiveSagaAwsGet()
+  ]);
 }

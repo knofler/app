@@ -8,18 +8,20 @@
 
 import {
   DEFAULT_ACTION,
+  MEDIALIVE_CONST_ADD_AWS_GET,
+  MEDIALIVE_CONST_ADD_AWS_GET_SUCCESS,
+  MEDIALIVE_CONST_ADD_AWS_GET_ERROR,
   MEDIALIVE_CONST_ADD,
+  MEDIALIVE_CONST_ADD_MODEL,
+  MEDIALIVE_CONST_ADD_FORM_STRUCTURE,
+  MEDIALIVE_CONST_ADD_FORM_INPUT,
+  MEDIALIVE_CONST_ADD_FORM_RESET,
   MEDIALIVE_CONST_ADD_POST,
   MEDIALIVE_CONST_ADD_SUCCESS,
   MEDIALIVE_CONST_ADD_ERROR,
   MEDIALIVE_CONST_ADD_AWS_POST,
   MEDIALIVE_CONST_ADD_AWS_SUCCESS,
-  MEDIALIVE_CONST_ADD_AWS_ERROR,
-  MEDIALIVE_CONST_ADD_MODEL,
-  MEDIALIVE_CONST_ADD_AWS_MODEL,
-  MEDIALIVE_CONST_ADD_FORM_STRUCTURE,
-  MEDIALIVE_CONST_ADD_FORM_INPUT,
-  MEDIALIVE_CONST_ADD_FORM_RESET
+  MEDIALIVE_CONST_ADD_AWS_ERROR
 } from "./constants";
 
 /*
@@ -42,18 +44,49 @@ export function defaultAction() {
 
 /*
  *
+  * MediaLive ACTIONS AWS GET
+ *
+ */
+export function mediaLiveActionAWSGet({ model, id = "" }) {
+  console.log("in mediaLiveActionAWSGet in ACTION :: model :::", model);
+  console.log("in mediaLiveActionAWSGet in ACTION :: id :::", id);
+  return {
+    type: MEDIALIVE_CONST_ADD_AWS_GET,
+    model,
+    id
+  };
+}
+
+export function mediaLiveActionAWSGetError(error) {
+  return {
+    type: MEDIALIVE_CONST_ADD_AWS_GET_ERROR,
+    error
+  };
+}
+
+export function mediaLiveActionAWSGetSuccess(apiData) {
+  console.log(
+    "payload received from API yeild in mediaLiveActionAWSGet function in action is",
+    apiData
+  );
+  return {
+    type: MEDIALIVE_CONST_ADD_AWS_GET_SUCCESS,
+    apiData
+  };
+}
+
+/*
+ *
     * MediaLive ACTIONS ADD MODEL,FORM STRUCTURE AND INITIIAL FORM INPUT
  *
  */
-export function mediaLiveActionAdd({ struct, model, awsModel }) {
+export function mediaLiveActionAdd({ struct, model }) {
   console.log("in mediaLiveActionAdd in ACTION :: struct :::", struct);
   console.log("in mediaLiveActionAdd in ACTION :: model :::", model);
-  console.log("in mediaLiveActionAdd in ACTION :: awsModel :::", awsModel);
   return {
     type: MEDIALIVE_CONST_ADD,
     struct,
-    model,
-    awsModel
+    model
   };
 }
 /*
@@ -101,18 +134,18 @@ export function mediaLiveActionAddSuccess(payload) {
     * MediaLive ACTIONS AWS API POST CALL WITH FORM INPUT
  *
  */
-export function mediaLiveActionAddAwsPost({ input, model, awsModel }) {
+export function mediaLiveActionAddAwsPost({ input, model, apiAction = "PRE" }) {
   console.log("in mediaLiveActionAddAwsPost in ACTION :: input :::", input);
   console.log("in mediaLiveActionAddAwsPost in ACTION :: model :::", model);
   console.log(
-    "in mediaLiveActionAddAwsPost in ACTION :: awsModel :::",
-    awsModel
+    "in mediaLiveActionAddAwsPost in ACTION :: mapiAction :::",
+    apiAction
   );
   return {
     type: MEDIALIVE_CONST_ADD_AWS_POST,
     input,
     model,
-    awsModel
+    apiAction
   };
 }
 /*
@@ -130,6 +163,7 @@ export function mediaLiveActionAddAwsError(awsError) {
     awsError
   };
 }
+
 /*
  *
     * MediaLive ACTIONS AWS API CALL SUCCESS CALL BACK FUNCTIONS

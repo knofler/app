@@ -26,7 +26,10 @@ import injectReducer from "utils/injectReducer";
 import { socket, subscribeToTimer } from "utils/socketio-client";
 import { channelActionApiData } from "./actions";
 
-import { makeSelectChannel, makeChannelApiDataSelector } from "./selectors";
+import {
+  // makeSelectChannel,
+  makeChannelApiDataSelector
+} from "./selectors";
 import reducer from "./reducer";
 import saga from "./saga";
 import messages from "./messages";
@@ -43,21 +46,17 @@ export class Channel extends React.Component {
       data: [],
       searchTerm: "",
       id: "",
-      timestamp: "no timestamp yet",
       add: false,
       update: false,
       delete: false,
       read: true,
       modelInput: "inputs",
-      awsModelInput: "create/input",
       createInput: false,
       formStructureInput: InputForm,
       modelChannel: "channels",
-      awsModelChannel: "create/channel",
       formStructureChannel: ChannelForm,
       createChannel: false,
       modelWorkflow: "workflows",
-      awsModelWorkflow: "create/workflow",
       formStructureWorkflow: WorkflowForm,
       createWorkflow: false,
     };
@@ -264,7 +263,6 @@ export class Channel extends React.Component {
           <MediaLive
             formStructure={this.state.formStructureInput}
             model={this.state.modelInput}
-            awsModel={this.state.awsModelInput}
             deploy={this.state.createInput}
           />
         </div>
@@ -290,7 +288,6 @@ export class Channel extends React.Component {
           <MediaLive
             formStructure={this.state.formStructureChannel}
             model={this.state.modelChannel}
-            awsModel={this.state.awsModelChannel}
             deploy={this.state.createChannel}
           />
         </div>
@@ -316,8 +313,8 @@ export class Channel extends React.Component {
           <MediaLive
             formStructure={this.state.formStructureWorkflow}
             model={this.state.modelWorkflow}
-            awsModel={this.state.awsModelWorkflow}
             deploy={this.state.createWorkflow}
+            apiAction="POST"
           />
         </div>
       );

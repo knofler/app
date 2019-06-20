@@ -19,6 +19,19 @@ const selectMediaLiveDomain = state => state.get("MediaLive", initialState);
  * MEDIALIVE_STATE_ADD_PAYLOAD
  */
 
+/**
+ * MEDIALIVE_STATE_AWS_GET_PAYLOAD
+ */
+
+const makeMediaLiveAWSGetPayloadSelector = () =>
+  createSelector(selectMediaLiveDomain, substate => {
+    console.log(
+      "MEDIALIVE_STATE_ADD_AWS_GET_PAYLOAD in selector",
+      substate.get("MEDIALIVE_STATE_ADD_AWS_GET_PAYLOAD")
+    );
+    return substate.get("MEDIALIVE_STATE_ADD_AWS_GET_PAYLOAD");
+  });
+
 const makeMediaLiveAddPayloadSelector = () =>
   createSelector(selectMediaLiveDomain, substate => {
     console.log(
@@ -68,19 +81,6 @@ const makeMediaLiveAddModelSelector = () =>
   });
 
 /**
- * MEDIALIVE_STATE_AWS_MODEL
- */
-
-const makeMediaLiveAwsModelSelector = () =>
-  createSelector(selectMediaLiveDomain, substate => {
-    console.log(
-      "MEDIALIVE_STATE_AWS_MODEL in SELECTOR:: :::",
-      substate.get("MEDIALIVE_STATE_AWS_MODEL")
-    );
-    return substate.get("MEDIALIVE_STATE_AWS_MODEL");
-  });
-
-/**
  * MEDIALIVE_STATE_ADD_FORM_STRUCTURE
  */
 
@@ -119,10 +119,10 @@ export default makeSelectmediaLive;
 export {
   selectMediaLiveDomain,
   makeMediaLiveAddPayloadSelector,
+  makeMediaLiveAWSGetPayloadSelector,
   makeMediaLiveAddAwsPayloadSelector,
   makeMediaLiveAddInputSelector,
   makeMediaLiveAddModelSelector,
-  makeMediaLiveAwsModelSelector,
   makeMediaLiveAddFormStructureSelector,
   makeMediaLiveAddFormItemResetSelector
 };

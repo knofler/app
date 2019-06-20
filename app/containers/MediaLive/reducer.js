@@ -11,6 +11,9 @@
 import { fromJS } from "immutable";
 import {
   DEFAULT_ACTION,
+  MEDIALIVE_CONST_ADD_AWS_GET,
+  MEDIALIVE_CONST_ADD_AWS_GET_SUCCESS,
+  MEDIALIVE_CONST_ADD_AWS_GET_ERROR,
   MEDIALIVE_CONST_ADD,
   MEDIALIVE_CONST_ADD_POST,
   MEDIALIVE_CONST_ADD_ERROR,
@@ -27,11 +30,14 @@ export const initialState = fromJS({
   MEDIALIVE_STATE_ADD_SUCCESS: false,
   MEDIALIVE_STATE_ADD_ERROR: false,
   MEDIALIVE_STATE_ADD_MODEL: "N0_MODEL",
+  MEDIALIVE_STATE_ADD_AWS_GET_PAYLOAD: {},
+  MEDIALIVE_STATE_ADD_AWS_GET_SUCCESS: false,
+  MEDIALIVE_STATE_ADD_AWS_GET_ERROR: false,
   MEDIALIVE_STATE_ADD_AWS_PAYLOAD: {},
   MEDIALIVE_STATE_ADD_AWS_SUCCESS: false,
   MEDIALIVE_STATE_ADD_AWS_ERROR: false,
-  MEDIALIVE_STATE_AWS_MODEL: "N0_MODEL",
   MEDIALIVE_STATE_ADD_INPUT: {},
+  MEDIALIVE_STATE_ADD_API_ACTION: "PRE",
   MEDIALIVE_STATE_ADD_FORM_RESET: false,
   MEDIALIVE_STATE_ADD_FORM_STRUCTURE: [],
   MEDIALIVE_STATE_ADD_LOADING: false
@@ -42,6 +48,24 @@ function mediaLiveReducer(state = initialState, action) {
   switch (action.type) {
     case DEFAULT_ACTION:
       return state;
+    case MEDIALIVE_CONST_ADD_AWS_GET:
+      console.log("in MEDIALIVE_CONST_ADD_AWS_GET action: ", action);
+      return state
+        .set("MEDIALIVE_STATE_ADD_LOADING", true)
+        .set("MEDIALIVE_STATE_ADD_AWS_GET_ERROR", false);
+    case MEDIALIVE_CONST_ADD_AWS_GET_ERROR:
+      return state
+        .set("MEDIALIVE_STATE_ADD_LOADING", false)
+        .set("MEDIALIVE_STATE_ADD_AWS_GET_ERROR", action.error);
+    case MEDIALIVE_CONST_ADD_AWS_GET_SUCCESS:
+      console.log(
+        "In MEDIALIVE_CONST_ADD_AWS_GET_SUCCESS reducer, action",
+        action.apiData
+      );
+      return state
+        .set("MEDIALIVE_STATE_ADD_LOADING", true)
+        .set("MEDIALIVE_STATE_ADD_AWS_GET_ERROR", false)
+        .set("MEDIALIVE_STATE_ADD_AWS_GET_PAYLOAD", action.apiData);
     case MEDIALIVE_CONST_ADD:
       console.log("in MEDIALIVE_CONST_ADD in REDUCER :: action::: ", action);
       console.log(
@@ -52,15 +76,10 @@ function mediaLiveReducer(state = initialState, action) {
         "in MEDIALIVE_CONST_ADD in REDUCER :: action.model ::: ",
         action.model
       );
-      console.log(
-        "in MEDIALIVE_CONST_ADD in REDUCER :: action.awsModel ::: ",
-        action.awsModel
-      );
       const userInput = {};
       action.struct.map(each => (userInput[each.name] = ""));
       return state
         .set("MEDIALIVE_STATE_ADD_MODEL", action.model)
-        .set("MEDIALIVE_STATE_AWS_MODEL", action.awsModel)
         .set("MEDIALIVE_STATE_ADD_FORM_STRUCTURE", action.struct)
         .set("MEDIALIVE_STATE_ADD_INPUT", userInput)
         .set("MEDIALIVE_STATE_ADD_ERROR", false);
@@ -114,13 +133,13 @@ function mediaLiveReducer(state = initialState, action) {
         action.model
       );
       console.log(
-        "in MEDIALIVE_CONST_ADD_AWS_POST in REDUCER :: action.awsModel ::: ",
-        action.awsModel
+        "in MEDIALIVE_CONST_ADD_AWS_POST in REDUCER :: action.apiAction ::: ",
+        action.apiAction
       );
       return state
         .set("MEDIALIVE_STATE_ADD_MODEL", action.model)
-        .set("MEDIALIVE_STATE_ADD_AWS_MODEL", action.awsModel)
         .set("MEDIALIVE_STATE_ADD_INPUT", action.input)
+        .set("MEDIALIVE_STATE_ADD_API_ACTION", action.apiAction)
         .set("MEDIALIVE_STATE_ADD_LOADING", true)
         .set("MEDIALIVE_STATE_ADD_ERROR", false)
         .set("MEDIALIVE_STATE_ADD_AWS_ERROR", false);
