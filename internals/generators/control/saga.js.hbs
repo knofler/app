@@ -9,13 +9,11 @@
 import { all, call, put, takeLatest } from "redux-saga/effects";
 import { socket } from "utils/socketio-client";
 import { {{ upperCase name }}_CONST_POST } from "./constants";
-import {
-  {{ name }}ActionPostSuccess,
-  {{ name }}ActionPostError
-} from "./actions";
+
+import { {{ name }}ActionSuccess, {{ name }}ActionError } from "./actions";
 
 const herokuAPIURL = "https://medialive-api.herokuapp.com";
-const model = "/api/books";
+const model = "/api/workflows";
 const getUrl = process.env.API_URL || herokuAPIURL;
 const url = getUrl + model;
 
@@ -26,29 +24,29 @@ console.log("url is ", url);
 // Load Functions on Event Change
 
 function* {{ name }}SagaPost() {
-  yield takeLatest({{ upperCase name }}_CONST_POST, fetchPostDelete);
+  yield takeLatest({{ upperCase name }}_CONST_POST, fetch{{ properCase name }});
 }
 
-
-function* fetchPostDelete(action) {
+function* fetch{{ properCase name }}(action) {
   try {
     // CRUD_CONST_{{ upperCase name }} event action and api call
     console.log("{{ upperCase name }}_CONST_POST constant's action in saga is:: ", action);
     console.log(
-      "{{ upperCase name }}_CONST_POST constant's action.id in saga is:: ",
-      action.id
+      "{{ upperCase name }}_CONST constant's action.ChannelId in saga is:: ",
+      action.ChannelId
     );
     console.log(
       "{{ upperCase name }}_CONST_POST constant's action.model in saga is:: ",
       action.model
     );
 
-    if (action.model !== undefined && action.id !== undefined) {
-      const {{ name }}Url = `${getUrl}/api/${action.model}/${action.id}`;
-      console.log("{{ name }}Url:", {{ name }}Url);
-      //
-      const response = yield call(fetch, {{ name }}Url, {
-        method: "{{ upperCase name }}",
+    if (action.ChannelId !== undefined) {
+      const {{ properCase name }}Url = `${getUrl}/api/aws/${action.model}/{{ name }}/${
+        action.ChannelId
+      }`;
+      console.log("{{ properCase name }}Url:", {{ properCase name }}Url);
+      const response = yield call(fetch, {{ properCase name }}Url, {
+        method: "POST",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json"
@@ -56,12 +54,14 @@ function* fetchPostDelete(action) {
       });
       const responseBody = yield response.json();
       console.log("responseBody of {{ upperCase name }}_CONST_POST in saga is", responseBody);
-      window.localStorage.setItem("{{ name }}-data", JSON.stringify(responseBody));
-      yield put({{ name }}ActionPostSuccess(responseBody));
-      socket.emit("{{ name }}_data", responseBody);
+      if (!responseBody.errors) {
+        window.localStorage.setItem("{{ properCase name }}-data", JSON.stringify(responseBody));
+        yield put({{ name }}ActionSuccess(responseBody));
+        socket.emit("event_{{ name }}", responseBody);
+      }
     }
   } catch (error) {
-    yield put({{ name }}ActionPostError(error));
+    yield put({{ name }}ActionError(error));
   }
 }
 

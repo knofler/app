@@ -1,0 +1,52 @@
+/* eslint-disable comma-dangle */
+/* eslint-disable no-console */
+/*
+*
+* {{ upperCase name }} selectors
+*
+*/
+
+import { createSelector } from "reselect";
+import { initialState } from "./reducer";
+
+/**
+ * Direct selector to the create state domain
+ */
+
+const select{{ properCase name }}Domain = state => state.get("{{ camelCase name }}", initialState);
+
+/**
+ * {{ upperCase name }}_STATE_PAYLOAD
+ */
+
+const make{{ properCase name }}PayloadSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_PAYLOAD in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_PAYLOAD")
+    );
+    return substate.get("{{ upperCase name }}_STATE_PAYLOAD");
+  });
+
+/**
+ * {{ upperCase name }}_STATE_MODEL
+ */
+
+const make{{ properCase name }}ModelSelector = () =>
+  createSelector(select{{ properCase name }}Domain, substate => {
+    console.log(
+      "{{ upperCase name }}_STATE_MODEL in SELECTOR:: :::",
+      substate.get("{{ upperCase name }}_STATE_MODEL")
+    );
+    return substate.get("{{ upperCase name }}_STATE_MODEL");
+  });
+
+/**
+ * Default selector used by {{ properCase name }}
+ */
+
+const makeSelect{{ properCase name }} = () =>
+  createSelector(select{{ properCase name }}Domain, substate => substate.toJS());
+
+export default makeSelect{{ properCase name }};
+export { select{{ properCase name }}Domain, make{{ properCase name }}PayloadSelector, make{{ properCase name }}ModelSelector };

@@ -14,17 +14,19 @@ const readGenerator = require("./read/index.js");
 const createGenerator = require("./create/index.js");
 const updateGenerator = require("./update/index.js");
 const deleteGenerator = require("./delete/index.js");
+const controlGenerator = require("./control/index.js");
 const languageGenerator = require("./language/index.js");
 
 module.exports = plop => {
   plop.setGenerator("component", componentGenerator);
-  plop.setGenerator("BasicContainer", basicContainerGenerator);
-  plop.setGenerator("container", containerGenerator);
   plop.setGenerator("read", readGenerator);
   plop.setGenerator("create", createGenerator);
   plop.setGenerator("update", updateGenerator);
   plop.setGenerator("delete", deleteGenerator);
+  plop.setGenerator("control", controlGenerator);
+  plop.setGenerator("container", containerGenerator);
   plop.setGenerator("language", languageGenerator);
+  plop.setGenerator("BasicContainer", basicContainerGenerator);
   plop.addHelper("directory", comp => {
     try {
       fs.accessSync(

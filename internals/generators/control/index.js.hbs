@@ -1,0 +1,157 @@
+/* eslint-disable no-return-assign */
+/* eslint-disable func-names */
+/* eslint-disable react/no-string-refs */
+/* eslint-disable no-console */
+/* eslint-disable comma-dangle */
+
+/**
+ *
+ * {{properCase name }}
+ *
+ */
+
+import React from "react";
+import PropTypes from "prop-types";
+import { connect } from "react-redux";
+import { Helmet } from "react-helmet";
+import { FormattedMessage } from "react-intl";
+import { createStructuredSelector } from "reselect";
+import { compose } from "redux";
+
+import injectSaga from "utils/injectSaga";
+import injectReducer from "utils/injectReducer";
+import { {{ name }}Action, {{ name }}ActionPost } from "./actions";
+import {
+  // makeSelect{{ properCase name }},
+  make{{ properCase name }}PayloadSelector,
+  make{{ properCase name }}ModelSelector
+} from "./selectors";
+import reducer from "./reducer";
+import saga from "./saga";
+import messages from "./messages";
+
+import "./{{ properCase name }}.css";
+
+/* eslint-disable react/prefer-stateless-function */
+export class {{ properCase name }} extends React.Component {
+  constructor(props) {
+    super(props);
+    // Local component States
+    this.state = {
+      // eslint-disable-next-line react/no-unused-state
+      render: "This is Default  Form Render Space"
+    };
+    // Binding Component specific methods
+    // this.FormAPICall = this.FormAPICall.bind(this);
+  }
+
+  componentDidMount() {
+    // On Component Mount, set the form structure and Model
+    this.props.{{ name }}Dispatch({
+      model: this.props.model,
+      ChannelId: this.props.ChannelId
+    });
+  }
+
+  //  Form Methods
+  {{ name }}FormAPICall = e => {
+    e.preventDefault();
+    console.log(" Form Data Method is invoked");
+
+    this.props.{{ name }}DispatchPost({
+      model: this.props.model,
+      ChannelId: this.props.ChannelId
+    });
+  };
+
+  render() {
+    if (this.props.deploy === true) {
+      return (
+        <div>
+          <Helmet>
+            <title>{{ properCase name }}</title>
+            <meta name="description" content="Description of {{ properCase name }}" />
+          </Helmet>
+          <FormattedMessage {...messages.header} />
+          <div>
+            <div>
+              Injected Model is :::
+              <strong> {this.props.{{ name }}PropsModel}</strong>
+            </div>
+            <div>
+              Channel Id is :::
+              <strong> {this.props.ChannelId}</strong>
+            </div>
+            <div>
+              <p>
+                Submited Forms AWS JSON Response :: <br />
+                <pre className="jsonResponse">
+                  {JSON.stringify(this.props.{{ name }}PropsPayload)}
+                </pre>
+              </p>
+            </div>
+          </div>
+          {/*
+          {/* Display Form */}
+          <div>
+            <form ref="form" onSubmit={this.{{ name }}FormAPICall}>
+              <button type="submit">{{ properCase name }}</button>
+            </form>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div>
+        <Helmet>
+          <title>{{ properCase name }}</title>
+          <meta name="description" content="Description of {{properCase name }}" />
+        </Helmet>
+        <FormattedMessage {...messages.header} />
+        <div>
+          <pre>{/* <code>{this.state.{{ name }}PropsPayload}</code> */}</pre>
+        </div>
+      </div>
+    );
+  }
+}
+
+{{ properCase name }}.propTypes = {
+  // dispatch: PropTypes.func.isRequired,
+  ChannelId: PropTypes.string.isRequired,
+  model: PropTypes.string.isRequired,
+  deploy: PropTypes.bool.isRequired,
+  {{ name }}Dispatch: PropTypes.func,
+  {{ name }}DispatchPost: PropTypes.func,
+  {{ name }}PropsPayload: PropTypes.object
+};
+
+const mapStateToProps = createStructuredSelector({
+  // {{ name }}: makeSelect{{ properCase name }}(),
+  {{ name }}PropsPayload: make{{properCase name }}PayloadSelector(),
+  {{ name }}PropsModel: make{{ properCase name }}ModelSelector()
+});
+
+function mapDispatchToProps(dispatch) {
+  return {
+    // dispatch,
+    {{ name }}Dispatch: ({ ChannelId, model }) =>
+      dispatch({{ name }}Action({ ChannelId, model })),
+    {{ name }}DispatchPost: ({ ChannelId, model }) =>
+      dispatch({{ name }}ActionPost({ ChannelId, model }))
+  };
+}
+
+const withConnect = connect(
+  mapStateToProps,
+  mapDispatchToProps
+);
+
+const withReducer = injectReducer({ key: "{{ name }}", reducer });
+const withSaga = injectSaga({ key: "{{ name }}", saga });
+
+export default compose(
+  withReducer,
+  withSaga,
+  withConnect
+)({{ properCase name }});

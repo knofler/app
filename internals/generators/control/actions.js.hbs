@@ -1,0 +1,86 @@
+/* eslint-disable comma-dangle */
+/* eslint-disable no-console */
+/*
+*
+* {{ upperCase name }} actions
+*
+*/
+
+import {
+  DEFAULT_ACTION,
+  {{ upperCase name }}_CONST,
+  {{ upperCase name }}_CONST_POST,
+  {{ upperCase name }}_CONST_SUCCESS,
+  {{ upperCase name }}_CONST_ERROR
+} from "./constants";
+
+/*
+*
+* DEFAULT actions {{ upperCase name }}
+*
+*/
+
+export function defaultAction() {
+  return {
+    type: DEFAULT_ACTION
+  };
+}
+
+/*
+*
+  * {{ upperCase name }} ACTIONS 
+*
+*/
+
+/*
+ *
+    * {{ upperCase name }} ACTIONS  MODEL,FORM STRUCTURE AND INITIIAL FORM INPUT
+ *
+ */
+export function {{ name }}Action({ ChannelId, model }) {
+  console.log("in {{ name }}Action in ACTION :: ChannelId :::", ChannelId);
+  console.log("in {{ name }}Action in ACTION :: model :::", model);
+  return {
+    type: {{ upperCase name }}_CONST,
+    ChannelId,
+    model
+  };
+}
+/*
+ *
+    * {{ upperCase name }} ACTIONS API POST CALL WITH FORM INPUT
+ *
+ */
+export function {{ name }}ActionPost({ ChannelId, model }) {
+  console.log("in {{ name }}ActionPost in ACTION :: ChannelId :::", ChannelId);
+  console.log("in {{ name }}ActionPost in ACTION :: model :::", model);
+  return {
+    type: {{ upperCase name }}_CONST_POST,
+    ChannelId,
+    model
+  };
+}
+/*
+ *
+    * {{ upperCase name }} ACTIONS API CALL ERROR HANDLING
+ *
+ */
+export function {{ name }}ActionError(error) {
+  console.log("in {{ name }}ActionError in ACTION :: error :::", error);
+  return {
+    type: {{ upperCase name }}_CONST_ERROR,
+    error
+  };
+}
+/*
+ *
+    * {{ upperCase name }} ACTIONS API CALL SUCCESS CALL BACK FUNCTIONS
+ *
+ */
+export function {{ name }}ActionSuccess(payload) {
+  console.log("in {{ name }}ActionSuccess in ACTION :: payload :::", payload);
+  return {
+    type: {{ upperCase name }}_CONST_SUCCESS,
+    payload
+  };
+}

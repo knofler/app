@@ -1,0 +1,83 @@
+/* eslint-disable no-return-assign */
+/* eslint-disable no-case-declarations */
+/* eslint-disable comma-dangle */
+/* eslint-disable no-console */
+/*
+ *
+ * {{ upperCase name }} reducer
+ *
+ */
+
+import { fromJS } from "immutable";
+import {
+  DEFAULT_ACTION,
+  {{ upperCase name }}_CONST,
+  {{ upperCase name }}_CONST_POST,
+  {{ upperCase name }}_CONST_ERROR,
+  {{ upperCase name }}_CONST_SUCCESS
+} from "./constants";
+
+export const initialState = fromJS({
+  {{ upperCase name }}_STATE_PAYLOAD: {},
+  {{ upperCase name }}_STATE_SUCCESS: false,
+  {{ upperCase name }}_STATE_ERROR: false,
+  {{ upperCase name }}_STATE_MODEL: "N0_MODEL",
+  {{ upperCase name }}_STATE_LOADING: false,
+  {{ upperCase name }}_STATE_CHANNEL_{{ upperCase name }}: "OFF"
+});
+
+function {{ name }}Reducer(state = initialState, action) {
+  console.log("Global reducer file being called");
+  switch (action.type) {
+    case DEFAULT_ACTION:
+      return state;
+    case {{ upperCase name }}_CONST:
+      console.log("in {{ upperCase name }}_CONST in REDUCER :: action::: ", action);
+      console.log(
+        "in {{ upperCase name }}_CONST in REDUCER :: action.ChannelId ::: ",
+        action.ChannelId
+      );
+      console.log(
+        "in {{ upperCase name }}_CONST in REDUCER :: action.model ::: ",
+        action.model
+      );
+      return state
+        .set("{{ upperCase name }}_STATE_MODEL", action.model)
+        .set("{{ upperCase name }}_STATE_CHANNEL_{{ upperCase name }}", "ON")
+        .set("{{ upperCase name }}_STATE_ERROR", false);
+    case {{ upperCase name }}_CONST_POST:
+      console.log("in {{ upperCase name }}_CONST_POST in REDUCER :: action::: ", action);
+      console.log(
+        "in {{ upperCase name }}_CONST in REDUCER :: action.ChannelId ::: ",
+        action.ChannelId
+      );
+      console.log(
+        "in {{ upperCase name }}_CONST in REDUCER :: action.model ::: ",
+        action.model
+      );
+      return state
+        .set("{{ upperCase name }}_STATE_MODEL", action.model)
+        .set("{{ upperCase name }}_STATE_CHANNEL_{{ upperCase name }}", "ON")
+        .set("{{ upperCase name }}_STATE_ERROR", false);
+    case {{ upperCase name }}_CONST_ERROR:
+      console.log(
+        "in {{ upperCase name }}_CONST_ERROR in REDUCER,:: error ::: ",
+        action.error
+      );
+      return state.set("{{ upperCase name }}_STATE_ERROR", action.error);
+    case {{ upperCase name }}_CONST_SUCCESS:
+      console.log(
+        "In {{ upperCase name }}_CONST_SUCCESS in REDUCER,:: payload :::",
+        action.payload
+      );
+      return state
+        .set("{{ upperCase name }}_STATE_ERROR", false)
+        .set("{{ upperCase name }}_STATE_SUCCESS", true)
+        .set("{{ upperCase name }}_STATE_PAYLOAD", action.payload);
+
+    default:
+      return state;
+  }
+}
+
+export default {{ name }}Reducer;
