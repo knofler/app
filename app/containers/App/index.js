@@ -20,7 +20,8 @@ import Channel from "containers/Channel/Loadable";
 import Crud from "containers/Crud/Loadable";
 import Order from "containers/Order/Loadable";
 import Read from "containers/Read/Loadable";
-// import Pencil from "containers/Pencil/Loadable";
+import Pencil from "containers/Pencil/Loadable";
+import Genapp from "containers/Genapp/Loadable";
 import Test from "containers/Test/Loadable";
 import Search from "containers/Search/Loadable";
 import Auth from "containers/Auth/Loadable";
@@ -57,8 +58,9 @@ export default function App() {
         <Route path="/chef" component={Chef} />{" "}
         <Route path="/book" component={Book} />{" "}
         <Route path="/channel" component={Channel} />{" "}
+        <Route path="/genapp" component={Genapp} />{" "}
         <Route path="/read" component={Read} />{" "}
-        {/* <Route path="/pencil" component={Pencil} />{" "} */}
+        <Route path="/pencil" component={Pencil} />{" "}
         <Route path="/order" component={Order} />{" "}
         <Route path="/crud" component={Crud} />{" "}
         <Route path="/test" component={Test} />{" "}
