@@ -1,0 +1,682 @@
+{
+  "theme": "dark-daltonized",
+  "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true,
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Edit",
+      "Write",
+      "TodoWrite",
+      "WebFetch",
+      "WebSearch",
+      "Task",
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(docker:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker-compose:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(yarn:*)",
+      "Bash(pnpm:*)",
+      "Bash(bun:*)",
+      "Bash(node:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(pip:*)",
+      "Bash(pip3:*)",
+      "Bash(uv:*)",
+      "Bash(poetry:*)",
+      "Bash(make:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(less:*)",
+      "Bash(more:*)",
+      "Bash(jq:*)",
+      "Bash(yq:*)",
+      "Bash(awk:*)",
+      "Bash(sed:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(ag:*)",
+      "Bash(find:*)",
+      "Bash(fd:*)",
+      "Bash(ls:*)",
+      "Bash(tree:*)",
+      "Bash(stat:*)",
+      "Bash(file:*)",
+      "Bash(wc:*)",
+      "Bash(sort:*)",
+      "Bash(uniq:*)",
+      "Bash(tr:*)",
+      "Bash(cut:*)",
+      "Bash(paste:*)",
+      "Bash(comm:*)",
+      "Bash(diff:*)",
+      "Bash(cmp:*)",
+      "Bash(date:*)",
+      "Bash(echo:*)",
+      "Bash(printf:*)",
+      "Bash(test:*)",
+      "Bash(hostname:*)",
+      "Bash(whoami)",
+      "Bash(uname:*)",
+      "Bash(which:*)",
+      "Bash(type:*)",
+      "Bash(env)",
+      "Bash(pwd)",
+      "Bash(true)",
+      "Bash(false)",
+      "Bash(basename:*)",
+      "Bash(dirname:*)",
+      "Bash(realpath:*)",
+      "Bash(readlink:*)",
+      "Bash(mkdir:*)",
+      "Bash(touch:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(ln:*)",
+      "Bash(chmod:*)",
+      "Bash(chown:*)",
+      "Bash(tar:*)",
+      "Bash(zip:*)",
+      "Bash(unzip:*)",
+      "Bash(gzip:*)",
+      "Bash(gunzip:*)",
+      "Bash(md5:*)",
+      "Bash(md5sum:*)",
+      "Bash(shasum:*)",
+      "Bash(sha256sum:*)",
+      "Bash(base64:*)",
+      "Bash(openssl:*)",
+      "Bash(sleep:*)",
+      "Bash(timeout:*)",
+      "Bash(xargs:*)",
+      "Bash(tee:*)",
+      "Bash(tsc:*)",
+      "Bash(tsx:*)",
+      "Bash(eslint:*)",
+      "Bash(prettier:*)",
+      "Bash(vitest:*)",
+      "Bash(jest:*)",
+      "Bash(playwright:*)",
+      "Bash(./scripts/:*)",
+      "Bash(./hooks/:*)",
+      "Bash(./AI/scripts/:*)",
+      "Bash(./AI/hooks/:*)",
+      "Bash(./dev:*)",
+      "Bash(./run:*)",
+      "Bash(./build:*)",
+      "Bash(./bin/:*)",
+      "Bash(./test:*)",
+      "Bash(./start:*)",
+      "Bash(./stop:*)",
+      "Bash(./deploy:*)",
+      "Bash(./up:*)",
+      "Bash(./down:*)",
+      "Bash(./restart:*)",
+      "Bash(./health_check.sh:*)",
+      "Bash(./update_all.sh:*)",
+      "Bash(./init_ai.sh:*)",
+      "Bash(./agentflow:*)",
+      "Bash(vercel:*)",
+      "Bash(render:*)",
+      "Bash(atlas:*)",
+      "Bash(mongosh:*)",
+      "Bash(mongo:*)",
+      "Bash(redis-cli:*)",
+      "Bash(psql:*)",
+      "Bash(mysql:*)",
+      "Bash(claude:*)",
+      "Bash(gemini:*)",
+      "Bash(copilot:*)",
+      "Bash(brew:*)",
+      "Bash(code:*)",
+      "Bash(open:*)",
+      "Bash(say:*)",
+      "mcp__gitkraken",
+      "mcp__context7",
+      "mcp__shadcn-ui",
+      "mcp__myai__brain_delta",
+      "mcp__myai__brain_status",
+      "mcp__myai__brain_health",
+      "mcp__myai__brain_search",
+      "mcp__myai__brain_lookup",
+      "mcp__myai__brain_log",
+      "mcp__myai__brain_diff",
+      "mcp__myai__brain_blame",
+      "mcp__myai__brain_timeline",
+      "mcp__myai__brain_manifest",
+      "mcp__myai__brain_commit",
+      "mcp__myai__brain_merge",
+      "mcp__myai__context_boot",
+      "mcp__myai__handoff_read",
+      "mcp__myai__handoff_write",
+      "mcp__myai__state_read",
+      "mcp__myai__state_update",
+      "mcp__myai__recall_session",
+      "mcp__myai__memory_search",
+      "mcp__myai__memory_context",
+      "mcp__myai__memory_reindex",
+      "mcp__myai__tasks_list",
+      "mcp__myai__tasks_next",
+      "mcp__myai__tasks_update",
+      "mcp__myai__repos_list",
+      "mcp__myai__repos_status",
+      "mcp__myai__repos_card_list",
+      "mcp__myai__repos_card_upsert",
+      "mcp__myai__fleet_overview",
+      "mcp__myai__health_status",
+      "mcp__myai__schedules_list",
+      "mcp__myai__plan_list",
+      "mcp__myai__plan_set",
+      "mcp__myai__logs_list",
+      "mcp__myai__logs_record",
+      "mcp__myai__usage_summary",
+      "mcp__myai__budgets_status",
+      "mcp__myai__provider_health",
+      "mcp__myai__runner_liveness",
+      "mcp__myai__continuity_stats",
+      "mcp__myai__perf_stats",
+      "mcp__github__get_file_contents",
+      "mcp__github__get_issue",
+      "mcp__github__get_pull_request",
+      "mcp__github__get_pull_request_comments",
+      "mcp__github__get_pull_request_files",
+      "mcp__github__get_pull_request_reviews",
+      "mcp__github__get_pull_request_status",
+      "mcp__github__list_commits",
+      "mcp__github__list_issues",
+      "mcp__github__list_pull_requests",
+      "mcp__github__search_code",
+      "mcp__github__search_issues",
+      "mcp__github__search_repositories",
+      "mcp__github__search_users"
+    ],
+    "deny": [
+      "Bash(rm -rf /:*)",
+      "Bash(rm -rf ~:*)",
+      "Bash(rm -rf $HOME:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard origin:*)",
+      "Bash(git clean -fdx:*)",
+      "Bash(dd:*)",
+      "Bash(mkfs:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/00-project-identity.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/00a-host-env.sh",
+            "timeout": 2000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/01-machine-switch.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/02-dropbox-conflicts.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/03-docker-health.sh",
+            "timeout": 15000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/04-atlas-connectivity.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/05-copilot-status.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/06-aws-auth.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/07-azure-auth.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/08-sona-context-load.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/09-docker-naming-enforce.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/09a-boot-sync.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/10-channel-status.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/11-yolo-status.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/12-usage-guard-init.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/13-ram-guard.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/14-rag-recall-status.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/15-token-budget-status.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/16-org-context.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/17-schedule-status.sh",
+            "timeout": 6000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/18-machine-selfheal.sh",
+            "timeout": 60000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/19-vercel-gate-guard.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/20-dropbox-ignore.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/21-iterm-no-green.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/22-handoff-size-guard.sh",
+            "timeout": 15000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/22a-brain-converge.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/23-brain-status.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/24-myai-mcp-health.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/25-boot-selfcheck.sh",
+            "timeout": 12000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/26-git-fleet-preflight.sh",
+            "timeout": 20000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/28-gateway-freshness.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/29-permission-mode-guard.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/00-project-identity.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/00a-host-env.sh",
+            "timeout": 2000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/01-machine-switch.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/02-dropbox-conflicts.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/03-docker-health.sh",
+            "timeout": 15000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/04-atlas-connectivity.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/05-copilot-status.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/06-aws-auth.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/07-azure-auth.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/08-sona-context-load.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/09-docker-naming-enforce.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/10-channel-status.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/11-yolo-status.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/12-usage-guard-init.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/13-ram-guard.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/14-rag-recall-status.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/15-token-budget-status.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/16-org-context.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/17-schedule-status.sh",
+            "timeout": 6000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/18-machine-selfheal.sh",
+            "timeout": 60000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/19-vercel-gate-guard.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/20-dropbox-ignore.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/21-iterm-no-green.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/session/22-handoff-size-guard.sh",
+            "timeout": 15000
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/pre-tool/01-block-push-main.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/pre-tool/02-commit-msg-lint.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/pre-tool/03-secret-scan.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/pre-tool/05-no-local-npm.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/pre-tool/06-terraform-plan-guard.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/pre-tool/07-terraform-state-lock.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/pre-tool/08-iac-validate.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/pre-tool/09-cloud-cost-guard.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/pre-tool/16-block-workspace-gateway-deploy.sh",
+            "timeout": 3000
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/pre-tool/04-protected-files.sh",
+            "timeout": 3000
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/pre-tool/10-usage-guard.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/pre-tool/15-token-budget-guard.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/post-tool/01-tsc-on-commit.sh",
+            "timeout": 60000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/post-tool/02-vercel-status.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/post-tool/03-render-health.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/post-tool/04-gh-actions-status.sh",
+            "timeout": 10000
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/post-tool/05-framework-sync-reminder.sh",
+            "timeout": 3000
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/post-tool/06-handoff-staleness.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/post-tool/07-brain-observe.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./AI/scripts/notify-telegram.sh permission",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/stop/01-state-save-reminder.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/stop/02-sona-session-train.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/stop/03-session-dashboard.sh",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/stop/04-handoff-staleness.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/stop/05-brain-autoatom.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./AI/scripts/notify-telegram.sh done",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}

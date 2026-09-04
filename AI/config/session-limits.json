@@ -1,0 +1,55 @@
+{
+  "session_duration_minutes": 480,
+  "max_weighted_actions": 800,
+  "action_weights": {
+    "Bash": 1.0,
+    "Edit": 1.0,
+    "Write": 1.0,
+    "Read": 0.3,
+    "Glob": 0.3,
+    "Grep": 0.3,
+    "Agent": 1.0,
+    "default": 0.5
+  },
+  "warn_at_percent": [80, 90, 95],
+  "block_at_percent": null,
+  "block_tools": [],
+  "allow_through_tools": ["Read", "Glob", "Grep"],
+
+  "token_budget": {
+    "_comment": "EARLY-WARNING token-burn estimate (hooks/pre-tool/15-token-budget-guard.sh + hooks/session/15-token-budget-status.sh). GROUND TRUTH is Claude Code's `/usage` command (authoritative server-side session + weekly %); this hook is an on-disk APPROXIMATION because the real rate-limit % is NOT persisted to any file a hook can read (verified 2026-06-10: stats-cache.json has cumulative tokens only; sessions/*.json is process metadata). It sums actual OUTPUT tokens from transcripts under ~/.claude/projects (the cross-repo, account-level signal a per-repo action counter can't see). CALIBRATED 2026-06-10 against a real /usage reading: estimator showed ~2.76M output tokens / 5h across all repos when /usage reported 63% of the session limit, so 100% ~= 4.4M output tokens. RECALIBRATE when it drifts: run /usage, note its session %, read the session-start hook's token count, set output_budget = count / (pct/100). Window anchoring is approximate (fixed 300-min lookback vs Anthropic's first-use-anchored 5h window) so treat as an early nudge, not a precise gauge. Warn-only — never blocks. The checkpoint threshold fires a MANDATORY auto-handoff directive EARLY so hitting the wall is always survivable.",
+    "enabled": true,
+    "session_output_budget": 600000,
+    "warn_at_percent": [70, 85, 95],
+    "checkpoint_at_percent": 70,
+    "rolling_window": {
+      "enabled": true,
+      "window_minutes": 300,
+      "output_budget": 4400000,
+      "warn_at_percent": [70, 85, 95],
+      "cache_ttl_seconds": 90
+    },
+    "usage_ground_truth": {
+      "_comment": "Periodic /usage ground-truth nudge. The agent cannot run /usage itself (interactive Claude Code command — no tool/MCP surface), so when burn is elevated this emits a THROTTLED reminder to run /usage (or ask the user to) for the authoritative server-side %, since the metering above is only an estimate. interval_minutes throttles the nudge (default every 2 min); floor_percent is the higher-of session/rolling % at/above which it starts. Warn-only.",
+      "enabled": true,
+      "interval_minutes": 2,
+      "floor_percent": 70
+    }
+  },
+
+  "autosave": {
+    "_comment": "Mechanical enforcement of AI_RULES §15 (checkpoint-as-you-go — the handoff is ALWAYS current, never end-loaded). Operator directive 2026-07-05: 'credit ended and no handoff existed; AI should make the call and constantly auto-save.' Three hooks read these thresholds: hooks/post-tool/06-handoff-staleness.sh (throttled warn-only CHECKPOINT-OVERDUE box), hooks/pre-tool/15-token-budget-guard.sh (70% checkpoint box), and hooks/stop/04-handoff-staleness.sh (LOUD red at session close). stale_minutes = how old the handoff mtime may get; min_weighted_since = weighted tool calls (same weights as the Usage Guard) accrued since the last handoff write before the box fires — BOTH must be true. throttle_minutes throttles the overdue box so it nags without spamming. brain_atom=true appends a free NO-LLM auto brain atom (kind=session, slug=autosave) when overdue, if a brain store exists (auto-pushes; survives machine death). Warn-only — never blocks a tool.",
+    "enabled": true,
+    "stale_minutes": 30,
+    "min_weighted_since": 40,
+    "throttle_minutes": 5,
+    "brain_atom": true
+  },
+
+  "session_hooks": {
+    "_comment": "SessionStart hook latency budget (OPS task-085b3748). Every hooks/session/*.sh runs through hooks/hook_share/timing/timed_hook.sh (see .claude/settings.json), which records per-hook wall-clock to state/.hook-timing.log.<host> (gitignored, rotated). Hooks run in parallel, so the boot's cost = wall-clock (latest finish - earliest start), not the sum. When a boot's wall-clock exceeds budget_ms the last-finishing wrapper prints ONE compact 'slowest 3 hooks' line; under budget it prints nothing. `myai doctor` (session hook timing) shows the last boot's breakdown either way. Warn-only — timing never blocks or fails a hook.",
+    "budget_ms": 20000,
+    "log_max_lines": 4000,
+    "log_keep_lines": 2000
+  }
+}
