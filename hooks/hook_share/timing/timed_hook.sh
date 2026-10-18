@@ -71,16 +71,68 @@ now_ms() {
     echo $(( $(date +%s) * 1000 ))
 }
 
+# ── output cap (TOKEN task-2a431e9b) ────────────────────────────────────────
+# Every wrapped SessionStart hook is capped to MAX_OUT lines of visible output
+# so the framework's own boot chatter cannot dwarf the brain savings (see
+# plan/DIRECTION_2026-09.md bet 1). A hook that wants to print more moves the
+# detail behind `myai doctor`. The wrapper records the *emitted* byte count as a
+# 6th log field so `scripts/boot_cost.sh` (called by wrap-up) can total
+# CLAUDE.md + hook stdout — the per-session boot-cost KPI in the handoff header.
+# Override the cap with HOOK_TIMING_MAX_OUTPUT_LINES (default 3).
+MAX_OUT="${HOOK_TIMING_MAX_OUTPUT_LINES:-3}"
+case "$MAX_OUT" in ''|*[!0-9]*) MAX_OUT=3 ;; esac
+[ "$MAX_OUT" -ge 1 ] 2>/dev/null || MAX_OUT=3
+
+# Capture the hook's combined stdout+stderr so it can be capped before the model
+# ever sees it. mktemp failure degrades to a transparent (uncapped) passthrough.
+OUTFILE="$(mktemp 2>/dev/null || printf '')"
+trap 'rm -f "$OUTFILE" "$OUTFILE.capped" 2>/dev/null' EXIT
+OUT_BYTES=0
+
 run_hook() {
     # Run in the background + wait so a harness SIGTERM (per-hook timeout)
     # interrupts the wait and the trap can still record a timeout entry.
-    if [ -n "$INPUT" ]; then
-        printf '%s' "$INPUT" | "$HOOK" "$@" &
+    if [ -n "$OUTFILE" ]; then
+        if [ -n "$INPUT" ]; then
+            printf '%s' "$INPUT" | "$HOOK" "$@" > "$OUTFILE" 2>&1 &
+        else
+            "$HOOK" "$@" < /dev/null > "$OUTFILE" 2>&1 &
+        fi
     else
-        "$HOOK" "$@" < /dev/null &
+        if [ -n "$INPUT" ]; then
+            printf '%s' "$INPUT" | "$HOOK" "$@" &
+        else
+            "$HOOK" "$@" < /dev/null &
+        fi
     fi
     CHILD_PID=$!
     wait "$CHILD_PID"
+}
+
+# emit_capped — print at most MAX_OUT lines of the captured hook output, then
+# set OUT_BYTES to the bytes actually emitted. When the hook produced more, the
+# last of the MAX_OUT lines is a truncation note pointing at `myai doctor`, so
+# the visible line count is never exceeded. Idempotent + non-fatal: a missing or
+# empty capture (mktemp failed / hook streamed directly) is a no-op.
+emit_capped() {
+    OUT_BYTES=0
+    [ -n "$OUTFILE" ] && [ -s "$OUTFILE" ] || return 0
+    local nlines rest capped
+    nlines="$(awk 'END{print NR}' "$OUTFILE" 2>/dev/null)"
+    case "$nlines" in ''|*[!0-9]*) nlines=0 ;; esac
+    if [ "$nlines" -le "$MAX_OUT" ]; then
+        cat "$OUTFILE"
+        OUT_BYTES="$(wc -c < "$OUTFILE" 2>/dev/null | tr -d '[:space:]')"
+    else
+        rest=$(( nlines - (MAX_OUT - 1) ))
+        capped="$OUTFILE.capped"
+        { head -n "$((MAX_OUT - 1))" "$OUTFILE"
+          printf '  … +%s more line(s) hidden — run "myai doctor"\n' "$rest"; } > "$capped" 2>/dev/null
+        cat "$capped" 2>/dev/null
+        OUT_BYTES="$(wc -c < "$capped" 2>/dev/null | tr -d '[:space:]')"
+        rm -f "$capped" 2>/dev/null
+    fi
+    case "$OUT_BYTES" in ''|*[!0-9]*) OUT_BYTES=0 ;; esac
 }
 
 # ── resolve the timing log (skip timing entirely if nothing is writable) ───
@@ -105,9 +157,11 @@ if [ -z "$LOG_FILE" ]; then
 fi
 
 if [ -z "$LOG_FILE" ]; then
-    # No place to record — degrade to a transparent passthrough.
+    # No place to record timing — still cap the hook's output, just skip the log.
     run_hook "$@"
-    exit $?
+    RC=$?
+    emit_capped
+    exit "$RC"
 fi
 
 # ── boot id: session_id from the hook JSON groups all hooks of one boot ────
@@ -122,13 +176,16 @@ record_entry() {
     END_MS="$(now_ms)"
     DUR_MS=$((END_MS - START_MS))
     [ "$DUR_MS" -ge 0 ] 2>/dev/null || DUR_MS=0
-    { printf '%s %s %s %s %s\n' "$BOOT_ID" "$START_MS" "$DUR_MS" "$1" "$HOOK_NAME" >> "$LOG_FILE"; } 2>/dev/null
+    # 6th field = bytes of visible (capped) hook output — the boot-cost input.
+    { printf '%s %s %s %s %s %s\n' "$BOOT_ID" "$START_MS" "$DUR_MS" "$1" "$HOOK_NAME" "${OUT_BYTES:-0}" >> "$LOG_FILE"; } 2>/dev/null
 }
 
 # shellcheck disable=SC2329  # invoked indirectly via `trap on_term TERM INT`
 on_term() {
-    # Harness timeout kill: record what we know (124 = timed out) and die.
+    # Harness timeout kill: emit whatever the hook printed (capped), record what
+    # we know (124 = timed out) and die.
     [ -n "${CHILD_PID:-}" ] && kill "$CHILD_PID" 2>/dev/null
+    emit_capped
     record_entry 124
     exit 143
 }
@@ -139,6 +196,7 @@ START_MS="$(now_ms)"
 run_hook "$@"
 RC=$?
 trap - TERM INT
+emit_capped
 record_entry "$RC"
 
 # ── completion check: am I the last hook of this boot? ─────────────────────

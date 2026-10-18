@@ -18,7 +18,14 @@ set +e
 # logs to $MYAI_HOME/logs/gateway-rebuild.log. Boot prints one line; the next
 # boot finds a fresh image. Convergence with no human and no model in the loop.
 #
-# Set MYAI_NO_GATEWAY_REBUILD=1 to detect-and-report without rebuilding.
+# TOKEN task-2a431e9b: --background only detached the REBUILD. The freshness
+# SCAN itself (scan_ctx walks every file under runtime/, one stat(1) per file)
+# ran inline and cost ~56s of boot wall-clock on its own — more than the whole
+# 20s hook budget. So the ENTIRE gateway_ensure call is now detached into the
+# background and boot prints a single line. The scan + any rebuild happen off
+# the critical path; the result surfaces via `myai doctor` and the log.
+#
+# Set MYAI_NO_GATEWAY_REBUILD=1 to detect-and-report (still backgrounded).
 
 if [ -f /.dockerenv ] || [ -n "$MYAI_IN_CONTAINER" ]; then
   exit 0
@@ -34,9 +41,15 @@ SCRIPT="$ROOT/scripts/gateway_ensure.sh"
 [ -f "$ROOT/docker-compose.yml" ] || exit 0
 grep -q '^  gateway:' "$ROOT/docker-compose.yml" 2>/dev/null || exit 0
 
+# Detach the whole scan (+ optional background rebuild) so boot never waits on
+# the per-file mtime walk. Output goes to the freshness log; `myai doctor` and
+# the gateway-rebuild log carry the detail.
+FRESHLOG="${MYAI_HOME:-$HOME/.myai}/logs/gateway-freshness.log"
+mkdir -p "$(dirname "$FRESHLOG")" 2>/dev/null
 if [ -n "${MYAI_NO_GATEWAY_REBUILD:-}" ]; then
-  "$SCRIPT"
+  ( "$SCRIPT" >>"$FRESHLOG" 2>&1 & ) >/dev/null 2>&1
 else
-  "$SCRIPT" --apply --background
+  ( "$SCRIPT" --apply --background >>"$FRESHLOG" 2>&1 & ) >/dev/null 2>&1
 fi
+echo "gateway: freshness check dispatched (background) — 'myai doctor' / $FRESHLOG"
 exit 0

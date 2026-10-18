@@ -1,14 +1,26 @@
 #!/bin/bash
 set +e
-# Hook: 2 GB RAM Ceiling Guard
+# Hook: app-stack RAM Ceiling Guard (2 GB default, per-host via config/stack_limits.txt)
 # Event: SessionStart (runs on every `agent mode` kickoff)
 #
-# Sums Docker container RAM across this project's stack. Warns if total
-# exceeds 2 GB. Non-blocking — issues a recommendation, never aborts.
+# Sums Docker container RAM across this project's stack. Warns if total exceeds
+# this host's ceiling (default 2048 MB; a bigger Mac can lift it in
+# config/stack_limits.txt). Non-blocking — issues a recommendation, never aborts.
 #
 # Exempt a heavy-model repo by creating `.ram-exempt` at repo root.
 
+# Per-host ceiling (config/stack_limits.txt, keyed by `hostname -s`; default
+# 2048 MB). The resolver lives in scripts/lib/stack_limits.sh — the SAME map
+# that sizes the gateway's mem cap — so a host that gives the gateway more
+# headroom lifts this ceiling in lockstep. Falls back to 2048 when the lib or
+# map is absent. STACK_LIMITS_FILE / STACK_LIMITS_HOST: tests only.
 LIMIT_MB=2048
+_LIB="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/../../scripts/lib/stack_limits.sh"
+if [ -f "$_LIB" ]; then
+  # shellcheck source=scripts/lib/stack_limits.sh
+  . "$_LIB"
+  LIMIT_MB="$(resolve_stack_ceiling_mb "${STACK_LIMITS_FILE:-}" "${STACK_LIMITS_HOST:-}")"
+fi
 
 # Docker daemon must be up — borrow the check from 03-docker-health
 if ! docker info &>/dev/null; then
@@ -64,11 +76,21 @@ while IFS= read -r CNAME; do
   PROJECT_CONTAINERS="${PROJECT_CONTAINERS}${CNAME}"$'\n'
 done <<< "$ALL_RUNNING"
 
+# normalize_mb <docker-stats-MemUsage-first-field> — e.g. "256.4MiB" -> "256"
+normalize_mb() {
+  awk -v s="$1" 'BEGIN{
+    n=s+0;
+    if (s ~ /GiB/ || s ~ /GB/) n=n*1024;
+    else if (s ~ /KiB/ || s ~ /kB/ || s ~ /KB/) n=n/1024;
+    printf "%.0f", n;
+  }'
+}
+
 if [ -z "${PROJECT_CONTAINERS//[$'\n\t ']/}" ]; then
-  exit 0
+  PROJECT_CONTAINERS=""
 fi
 
-# Sum MemUsage across this project's containers
+# Sum MemUsage across this project's compose containers
 TOTAL_MB=0
 DETAIL=""
 while IFS= read -r CNAME; do
@@ -76,24 +98,45 @@ while IFS= read -r CNAME; do
   # docker stats output like: "256.4MiB / 7.652GiB"
   STAT=$(docker stats --no-stream --format '{{.MemUsage}}' "$CNAME" 2>/dev/null | awk '{print $1}')
   [ -z "$STAT" ] && continue
-  # Normalize to MB
-  CONTAINER_MB=$(awk -v s="$STAT" 'BEGIN{
-    n=s+0;
-    if (s ~ /GiB/ || s ~ /GB/) n=n*1024;
-    else if (s ~ /KiB/ || s ~ /kB/ || s ~ /KB/) n=n/1024;
-    printf "%.0f", n;
-  }')
+  CONTAINER_MB=$(normalize_mb "$STAT")
   [ -z "$CONTAINER_MB" ] && continue
   TOTAL_MB=$((TOTAL_MB + CONTAINER_MB))
   DETAIL="${DETAIL}  - ${CNAME}: ${CONTAINER_MB} MB"$'\n'
 done <<< "$PROJECT_CONTAINERS"
+
+# Ad-hoc containers bind-mounting this repo (task-6cd9d9c4) — e.g. the
+# throwaway `docker run --rm ... node:22` containers scripts/local-ci.sh
+# shells out to. These carry no compose service label at all, so the
+# accounting above never sees them: a coverage-gate container was observed at
+# 626 MiB / 450% CPU while this hook reported "403 MB / 2048 MB (under
+# ceiling)" — the ceiling was silently bypassed. Detected positively (no
+# compose-service label AND a bind mount Source under this repo root), never
+# by name, so it can't be dodged by an unnamed/auto-named container. A
+# compose-managed container (default OR profiled, e.g. the ci-profile
+# gh-runner) always carries the service label and is skipped here — profiled
+# services stay deliberately excluded from the app-stack ceiling either way.
+while IFS= read -r CID; do
+  [ -z "$CID" ] && continue
+  SVC=$(docker inspect "$CID" -f '{{index .Config.Labels "com.docker.compose.service"}}' 2>/dev/null)
+  [ -n "$SVC" ] && continue
+  MOUNTS=$(docker inspect "$CID" -f '{{range .Mounts}}{{.Source}}{{"\n"}}{{end}}' 2>/dev/null)
+  printf '%s\n' "$MOUNTS" | grep -Fq "$ROOT" || continue
+  CNAME=$(docker inspect "$CID" -f '{{.Name}}' 2>/dev/null | sed 's#^/##')
+  [ -z "$CNAME" ] && CNAME="$CID"
+  STAT=$(docker stats --no-stream --format '{{.MemUsage}}' "$CID" 2>/dev/null | awk '{print $1}')
+  [ -z "$STAT" ] && continue
+  CONTAINER_MB=$(normalize_mb "$STAT")
+  [ -z "$CONTAINER_MB" ] && continue
+  TOTAL_MB=$((TOTAL_MB + CONTAINER_MB))
+  DETAIL="${DETAIL}  - ${CNAME} (ad-hoc, bind-mounts repo): ${CONTAINER_MB} MB"$'\n'
+done <<< "$(docker ps -q 2>/dev/null)"
 
 if [ "$TOTAL_MB" -eq 0 ]; then
   exit 0
 fi
 
 if [ "$TOTAL_MB" -gt "$LIMIT_MB" ]; then
-  echo "⚠️  RAM Guard: ${TOTAL_MB} MB used — OVER 2 GB ceiling"
+  echo "⚠️  RAM Guard: ${TOTAL_MB} MB used — OVER ${LIMIT_MB} MB ceiling"
   echo "$DETAIL" | head -10
   echo "  Fix: add mem_limit (e.g. 1g / 512m) to services in docker-compose.yml"
   echo "  Or:  touch .ram-exempt   # if heavy-model repo (Ollama, etc.)"

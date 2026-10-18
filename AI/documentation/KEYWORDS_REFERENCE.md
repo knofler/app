@@ -50,6 +50,17 @@ The keywords below are loaded on demand: when the user types one of them, Read t
 
 **Task field standard:** `repo`, `title` (imperative, <90 chars), `priority` (P0–P3), `assignedAgent`, `recommendedModel`, `description` (what + acceptance), `source: manual`. Gateway must be running (host `http://localhost:3100`); `schedule_task.sh` checks reachability and tells you if it's down.
 
+## Swarm — one goal, parallel workers (`swarm <goal>`)
+
+> **The delegation verb.** One keyword turns a goal into a planned, operator-gated swarm of parallel runner tasks — usable from THIS repo because the myai stdio bridge in `.mcp.json` carries the `swarm_*` tools. Museum/director sessions should plan swarms here rather than build by hand.
+
+| Keyword | Action |
+|---------|--------|
+| `swarm <goal>` | **Plan a swarm for this repo.** (1) **Decompose by WORK TYPE:** split the goal into ≤5 child tasks, choosing each child's `assignedAgent` from the work it actually is — frontend/UI → `frontend-specialist`, endpoints/services → `api-specialist`, schema/queries → `database-specialist`, Docker/CI → `devops-specialist`, auth/permissions → `security-specialist`, docs → `documentation-specialist`, tests → `qa-specialist`. Each child: imperative title, description with acceptance criteria, priority, and `dependsOnIndexes` for real ordering (e.g. the QA child waits on the build children). (2) **Call `swarm_plan`** on the master gateway: `repo` = this repo's task-store name (git basename), `goal`, `createdBy` = `<host>/<repo>`, `children`. (3) **Report, don't run:** the swarm is created **PAUSED** — nothing fires until the operator calls `swarm approve <id>`. Show the returned swarmId, the child table (agent, priority, depends-on) and the dashboard link `http://localhost:3210/swarm`. (4) **Consent list:** repos on the fleet's `schedule_ignore.txt` are refused by the gateway — only pass `consent:true` after the user explicitly consents in this conversation. |
+| `swarm approve <id>` | Operator approval: call `swarm_approve` (`approvedBy` = `<host>/<repo>`). Every paused child flips to pending and the runner claims them by priority, honoring depends-on edges. |
+| `swarm list` / `swarm status [id]` | `swarm_list` (this repo's swarms, newest first) / `swarm_get <id>` (children in plan order with displayStatus, claimedBy, prUrl). |
+| `swarm stop <id>` | Kill switch: `swarm_stop` — open children pause, participants + creator get mailbox notice; `swarm approve` resumes. |
+
 ## Connect Hub
 
 | Keyword | Action |

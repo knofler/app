@@ -16,7 +16,10 @@
 # The map is optional — with no entry a repo defaults to personal and the guard
 # stays silent.
 #
-# forceLoginOrgID lockdown: on managed/shared machines Enterprise pins the org
+# Login check: work profiles (museum/tech) must actually be signed into their
+# org — the folder name alone proves nothing. Mismatch prints ⚠ ORG LOGIN MISMATCH.
+#
+# forceLoginOrgUUID lockdown: on managed/shared machines Enterprise pins the org
 # via managed settings (switching disabled by design). When that pin is
 # detected the hook reports it and SKIPS the mismatch guard — it never fights
 # the lockdown. See plan/MULTI_ORG_AUTH.md + documentation/MULTI_ORG_WORKFLOW.md.
@@ -42,21 +45,54 @@ esac
 
 echo "ORG: $ORG_LABEL — config $CFG_DIR"
 
-# --- forceLoginOrgID lockdown detection (managed settings) -----------------
-# macOS managed-settings path; also honour a managed settings.json carrying the pin.
+# --- Verify the REAL login, not just the folder name ------------------------
+# The label above is derived from the folder name only. On PH13292 (2026-09-28)
+# all three profiles were signed into the personal org while this banner said
+# "Powerhouse Museum" — Remote Control links then belonged to the wrong org and
+# the phone reported "session could not be found". Read oauthAccount and
+# compare. Work profiles have a known org UUID; personal has no expectation.
+case "$ORG_KEY" in
+  museum) EXPECT_UUID="3f50d862-a0c7-41c4-87c5-7e4e7b60e95c"; EXPECT_NAME="Powerhouse Museum" ;;
+  tech)   EXPECT_UUID="364c2521-d7f7-4c7e-a1d9-dc1480a5c8db"; EXPECT_NAME="Powerhouse Technology" ;;
+  *)      EXPECT_UUID=""; EXPECT_NAME="" ;;
+esac
+# ~/.claude keeps its login at ~/.claude.json; the other dirs keep it inside.
+AUTH_JSON="${ORG_AUTH_JSON:-$CFG_DIR/.claude.json}"
+[ -f "$AUTH_JSON" ] || AUTH_JSON="$HOME/.claude.json"
+if [ -n "$EXPECT_UUID" ]; then
+  ACTUAL=""
+  if [ -f "$AUTH_JSON" ] && command -v python3 >/dev/null 2>&1; then
+    ACTUAL=$(python3 -c 'import json,sys
+a=(json.load(open(sys.argv[1])).get("oauthAccount") or {})
+print((a.get("organizationUuid") or "")+"|"+(a.get("organizationName") or ""))' "$AUTH_JSON" 2>/dev/null)
+  fi
+  ACTUAL_UUID=${ACTUAL%%|*}
+  ACTUAL_NAME=${ACTUAL#*|}
+  if [ -z "$ACTUAL_UUID" ]; then
+    echo "ORG: login not verified — no oauthAccount readable in $AUTH_JSON (signed out, or python3 missing)"
+  elif [ "$ACTUAL_UUID" = "$EXPECT_UUID" ]; then
+    echo "ORG: login verified — signed into $ACTUAL_NAME ✓"
+  else
+    echo "⚠ ORG LOGIN MISMATCH: profile $CFG_BASE should be '$EXPECT_NAME' but is signed into '$ACTUAL_NAME' ($ACTUAL_UUID). Remote Control links from this session will not show under $EXPECT_NAME. Fix: /logout, then /login with your work account and pick $EXPECT_NAME."
+  fi
+fi
+
+# --- forceLoginOrgUUID lockdown detection (managed settings) ---------------
+# The real key is forceLoginOrgUUID, and Claude Code enforces it ONLY from
+# managed settings (it is machine-wide, so it cannot pin one profile). The old
+# spelling forceLoginOrgID is still matched so a legacy file keeps reporting.
 PINNED=""
 for MS in \
   "/Library/Application Support/ClaudeCode/managed-settings.json" \
-  "/etc/claude-code/managed-settings.json" \
-  "$CFG_DIR/managed-settings.json"; do
-  if [ -f "$MS" ] && grep -q 'forceLoginOrgID' "$MS" 2>/dev/null; then
+  "/etc/claude-code/managed-settings.json"; do
+  if [ -f "$MS" ] && grep -qE 'forceLoginOrg(UUID|ID)' "$MS" 2>/dev/null; then
     PINNED="$MS"
     break
   fi
 done
 
 if [ -n "$PINNED" ]; then
-  echo "ORG: pinned (forceLoginOrgID via $PINNED) — switching disabled by design; mismatch guard skipped."
+  echo "ORG: pinned (forceLoginOrgUUID via $PINNED) — switching disabled by design; mismatch guard skipped."
   exit 0
 fi
 

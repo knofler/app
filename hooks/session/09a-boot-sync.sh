@@ -33,7 +33,15 @@ fi
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 [ -z "$ROOT" ] && ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/../.." 2>/dev/null && pwd)"
-[ -z "$ROOT" ] && exit 0
+if [ -z "$ROOT" ]; then
+    # Real precondition failure (both git rev-parse and the $0-relative
+    # fallback failed to resolve a root) — same incident class as
+    # hooks/session/17-schedule-status.sh. Warn instead of vanishing silently,
+    # since this hook is supposed to run BEFORE the brain/gateway status
+    # hooks so they report reconciled truth.
+    echo "09a-boot-sync: cannot resolve repo (not a git repository) — boot sync skipped" >&2
+    exit 0
+fi
 
 SCRIPT="$ROOT/scripts/boot_sync.sh"
 [ -f "$SCRIPT" ] || exit 0

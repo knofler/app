@@ -39,6 +39,52 @@ if [ -n "$bad" ]; then
     exit 1
 fi
 
+# ── SECRET SCAN (task-7fd4320e, operator 2026-10-02) ─────────────────────────
+# The secret gate used to live ONLY in hooks/pre-tool/03-secret-scan.sh — a
+# Claude Code PreToolUse hook that agy (Antigravity), Codex CLI, Copilot and a
+# plain `git commit` in a terminal never trigger. Same policy, enforced at the
+# git layer every tool goes through. Canonical patterns come from
+# scripts/lib/secret_patterns.sh (master) / AI/scripts/lib/… (managed); the
+# inline fragments below are the fallback for repos the lib hasn't reached yet.
+# Fragments are concatenated at runtime so this file never matches itself in a
+# staged diff (hook 03's hard-won lesson).
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
+for _lib in "$REPO_ROOT/scripts/lib/secret_patterns.sh" "$REPO_ROOT/AI/scripts/lib/secret_patterns.sh"; do
+    if [ -f "$_lib" ]; then
+        # shellcheck disable=SC1090
+        . "$_lib" 2>/dev/null || true
+        break
+    fi
+done
+# Fallback fragments (keep in sync with the lib). NOTE: these must stay in
+# intermediate variables — a literal `{16}` inside a ${VAR:-default} would end
+# the expansion at its first `}` and silently truncate the regex.
+PAT_AWS='AKIA[A-Z0-9]{16}'
+PAT_OPENAI='sk-[a-zA-Z0-9]{48}'
+PAT_GH='ghp_[a-zA-Z0-9]{36}'
+PAT_GCP='AIza[a-zA-Z0-9_-]{35}'
+PAT_PEM='-----BEGIN [A-Z ]+KEY'"-----"
+PAT_MYAI="myai_(live|test)_[A-Za-z0-9]""{20,}"
+COMBINED="${SECRET_PAT_COMBINED:-${PAT_AWS}|${PAT_OPENAI}|${PAT_GH}|${PAT_GCP}|${PAT_PEM}|${PAT_MYAI}}"
+
+# Real .env files staged (allow .env.example / *.env.example).
+ENVSTAGED=$(printf '%s\n' "$staged" | grep -E '(^|/)\.env$|(^|/)\.env\.(local|production|development|test)$' || true)
+if [ -n "$ENVSTAGED" ]; then
+    echo "pre-commit: BLOCKED — real .env file(s) staged:" >&2
+    printf '%s\n' "$ENVSTAGED" | sed 's/^/  - /' >&2
+    echo "Unstage with 'git restore --staged <file>' (commit .env.example instead)." >&2
+    exit 1
+fi
+
+SECRETS=$(git diff --cached -U0 2>/dev/null | grep -iE "$COMBINED" | head -5 || true)
+if [ -n "$SECRETS" ]; then
+    echo "pre-commit: BLOCKED — secret-shaped content in the staged diff:" >&2
+    printf '%s\n' "$SECRETS" | cut -c1-120 | sed 's/^/  | /' >&2
+    echo "Remove the credential (use env vars / .env, which is gitignored)." >&2
+    echo "False positive? Bypass deliberately with: git commit --no-verify" >&2
+    exit 1
+fi
+
 # runner_backlog.jsonl schema/lint check (optional gate — only fires when the
 # file itself is staged). See scripts/validate_backlog_schema.sh header for
 # what it checks and why (required keys, valid priority, schedule_ignore.txt

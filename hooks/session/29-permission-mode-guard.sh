@@ -27,7 +27,15 @@ set +e
 # Warn-only. Never blocks. Exit 0 always.
 
 REPO_ROOT="${MYAI_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null)}"
-[ -z "$REPO_ROOT" ] && exit 0
+if [ -z "$REPO_ROOT" ]; then
+    # Real precondition failure (no MYAI_ROOT override and git rev-parse
+    # failed to resolve a root), not "nothing to alarm on" — same incident
+    # class as hooks/session/17-schedule-status.sh. Warn instead of vanishing
+    # silently: an operator relying on this hook to catch a manual-mode
+    # regression would otherwise see the same quiet output as a healthy pass.
+    echo "29-permission-mode-guard: cannot resolve repo (not a git repository) — permission mode check skipped" >&2
+    exit 0
+fi
 command -v jq >/dev/null 2>&1 || exit 0
 
 PROFILE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
@@ -50,17 +58,22 @@ read_disable() {
 }
 
 BYPASS="bypassPermissions"
+# "auto" is the sanctioned zero-prompt mode since Team/Enterprise orgs gained a
+# server-side policy that disables bypass (observed 2026-09-03; fleet default
+# moved to auto 2026-09-07 via scripts/rollout_permission_mode.sh). Either
+# counts as NOT manual.
+is_ok_mode() { [ "$1" = "$BYPASS" ] || [ "$1" = "auto" ]; }
 
 # --- sources that CAN grant bypass: managed policy, or the user/profile file ---
 GRANTING=""
 for f in "$MANAGED_1" "$MANAGED_2" "$USER_S"; do
-  [ "$(read_mode "$f")" = "$BYPASS" ] && GRANTING="$f" && break
+  is_ok_mode "$(read_mode "$f")" &&GRANTING="$f" && break
 done
 
 # --- every source that declares bypass, granting or not ---
 DECLARED=""
 for f in "$MANAGED_1" "$MANAGED_2" "$USER_S" "$PROJ_S" "$LOCAL_S"; do
-  [ "$(read_mode "$f")" = "$BYPASS" ] && DECLARED="$DECLARED $f"
+  is_ok_mode "$(read_mode "$f")" &&DECLARED="$DECLARED $f"
 done
 
 # --- org policy explicitly disabling bypass beats everything ---
@@ -85,8 +98,8 @@ alarm() {
 # A runtime signal, when present, is authoritative in BOTH directions:
 # it alarms on a bad mode and it silences the config checks on a good one.
 if [ -n "$RUNTIME_MODE" ]; then
-  if [ "$RUNTIME_MODE" != "$BYPASS" ]; then
-    alarm "runtime mode is '$RUNTIME_MODE', not $BYPASS." \
+  if ! is_ok_mode "$RUNTIME_MODE"; then
+    alarm "runtime mode is '$RUNTIME_MODE', not bypassPermissions/auto." \
           "Source: CLAUDE_PERMISSION_MODE env var (authoritative)."
   fi
   exit 0
@@ -110,16 +123,16 @@ if [ -n "$DECLARED" ]; then
   # to. One quiet line, only when it is not declared in a granting source, so a
   # fully-configured machine stays silent like every other healthy hook here.
   if [ -z "$GRANTING" ]; then
-    printf '\033[2mpermission mode: bypass declared in%s (fleet policy, PR #147).\033[0m\n' "$DECLARED"
+    printf '\033[2mpermission mode: bypass/auto declared in%s (fleet policy, PR #147; auto since 2026-09-07).\033[0m\n' "$DECLARED"
     printf '\033[2m  Cannot verify the EFFECTIVE mode from a hook. If tools still prompt, check /permissions;\033[0m\n'
     printf '\033[2m  the two known causes are a server-side org policy and a profile-level override.\033[0m\n'
   fi
   exit 0
 fi
 
-alarm "no bypassPermissions declaration found in any settings source." \
+alarm "no bypassPermissions/auto declaration found in any settings source." \
       "Checked: managed policy, $USER_S," \
       "         $PROJ_S, $LOCAL_S" \
-      "FIX: add \"permissions\": {\"defaultMode\": \"bypassPermissions\"} to" \
+      "FIX: add \"permissions\": {\"defaultMode\": \"auto\"} to" \
       "     $USER_S"
 exit 0

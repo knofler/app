@@ -22,11 +22,28 @@
 #   ./scripts/local-ci.sh --repo /path/to/r   # target a different repo
 #   ./scripts/local-ci.sh --sha <full-sha>     # override commit (default: HEAD of --branch)
 #   ./scripts/local-ci.sh --branch test        # override head branch (default: current)
+#   ./scripts/local-ci.sh --base test          # PR base branch (default: the base of the open
+#                                               # PR for --branch, else main). Required checks
+#                                               # come from THIS branch's protection, and
+#                                               # 'Enforce branch policy' (merge-gate.yml) only
+#                                               # applies when the base is main.
 #   ./scripts/local-ci.sh --trust-build        # skip running `build`, attest manual verification
+#   ./scripts/local-ci.sh --dry-run --no-branch-policy
+#                                               # report 'Enforce branch policy' as skipped:
+#                                               # it checks a PR head NAME, not code, so a
+#                                               # health check on `main` (the boot) must not
+#                                               # FAIL on it. Refused without --dry-run.
 #   ./scripts/local-ci.sh --history [sha]      # print recent ledger postings (optionally
 #                                               # filtered to a sha prefix); reads nothing
 #                                               # else, needs no gh/git/docker
 #   ./scripts/local-ci.sh -h | --help
+#
+# Environment:
+#   LOCAL_CI_MODE=runner|docker   force the Node/tsc/vitest/coverage gates into
+#                                 the warm self-hosted gh-runner (docker exec) or
+#                                 into ad-hoc throwaway containers. Default: auto
+#                                 — the runner when a free myai-gh-runner is up
+#                                 with the toolchain, else ad-hoc (unchanged).
 #
 # AUDIT LEDGER: every status this script actually posts (never --dry-run's
 # simulated ones) is appended as one JSONL row to
@@ -37,8 +54,12 @@
 # didn't genuinely pass." `--history` reads it back. Best-effort, non-fatal
 # mirror to the gateway's audit trail when localhost:3100 is reachable.
 #
-# Exit codes: 0 all required checks passed (and posted unless --dry-run);
-#             1 one or more checks failed; 2 usage/precondition error.
+# Exit codes: 0 every check that ran genuinely passed (and posted unless
+#             --dry-run) — the exit code IS the verdict, safe to script on;
+#             1 any required check or CRITICAL gate failed OR could not run
+#             (docker unavailable, gate script missing/crashed);
+#             2 usage/precondition error (gh/git missing, unauthenticated,
+#             required-checks query failed — never masked as a green 0).
 
 set -euo pipefail
 
@@ -46,12 +67,31 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/ci_check_map.sh
 . "$SCRIPT_DIR/lib/ci_check_map.sh"
 
+# Runner mode — run the Node/tsc/vitest/coverage gates inside the warm
+# self-hosted gh-runner via `docker exec`, instead of an ad-hoc `docker run
+# node:22` per gate (one env matching real CI; the runner has NO docker socket
+# and never gets one — we drive it from the host's docker CLI). [ -f ] guard:
+# this lib may not yet be in update_all's propagation set, so a managed repo's
+# propagated local-ci.sh must still run — degrade to docker-only (today's
+# behaviour) rather than hard-fail "No such file or directory" (task-e6d1325e).
+if [ -f "$SCRIPT_DIR/lib/local_ci_runner.sh" ]; then
+  # shellcheck source=lib/local_ci_runner.sh
+  . "$SCRIPT_DIR/lib/local_ci_runner.sh"
+else
+  LCR_RUNNER_CONTAINER="${LOCAL_CI_RUNNER_CONTAINER:-myai-gh-runner}"
+  LCR_MODE="docker"
+  LCR_MODE_REASON="runner lib not shipped in this repo → ad-hoc containers"
+  lcr_resolve_mode() { LCR_MODE=docker; }
+fi
+
 # ── Args ──────────────────────────────────────────────────────────────────
 REPO_ROOT=""
 SHA=""
 BRANCH=""
+BASE=""
 DRY_RUN=0
 TRUST_BUILD=0
+NO_BRANCH_POLICY=0
 HISTORY_MODE=0
 HISTORY_SHA=""
 NODE_IMAGE="${LOCAL_CI_NODE_IMAGE:-node:22-alpine}"
@@ -84,15 +124,17 @@ CTR_MEMORY="${LOCAL_CI_MEMORY:-1500m}"
 CTR_CPUS="${LOCAL_CI_CPUS:-4}"
 CTR_LIMITS=(--memory="$CTR_MEMORY" --cpus="$CTR_CPUS")
 
-usage() { sed -n '2,41p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,57p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --repo)        REPO_ROOT="$2"; shift 2 ;;
     --sha)         SHA="$2"; shift 2 ;;
     --branch)      BRANCH="$2"; shift 2 ;;
+    --base)        BASE="$2"; shift 2 ;;
     --dry-run)     DRY_RUN=1; shift ;;
     --trust-build) TRUST_BUILD=1; shift ;;
+    --no-branch-policy) NO_BRANCH_POLICY=1; shift ;;
     --history)
       HISTORY_MODE=1
       if [ $# -ge 2 ] && [[ "$2" != -* ]]; then HISTORY_SHA="$2"; shift 2; else shift 1; fi
@@ -101,6 +143,11 @@ while [ $# -gt 0 ]; do
     *) echo "Unknown arg: $1" >&2; usage 2 ;;
   esac
 done
+
+if [ "$NO_BRANCH_POLICY" = 1 ] && [ "$DRY_RUN" != 1 ]; then
+  echo "local-ci: --no-branch-policy is only allowed with --dry-run (a real run must enforce it)" >&2
+  exit 2
+fi
 
 # ── Ledger (auditable posting record) ───────────────────────────────────────
 # Every status this script actually posts gets one JSONL row here — the audit
@@ -226,6 +273,29 @@ NWO="$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)" \
   || { echo "ERROR: could not resolve owner/repo (no GitHub remote?)." >&2; exit 2; }
 BRANCH="${BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
 SHA="${SHA:-$(git rev-parse "$BRANCH" 2>/dev/null || git rev-parse HEAD)}"
+# PR base: explicit --base wins; else the base of the open PR whose head is
+# $BRANCH; else main. Before 2026-10-04 local-ci assumed main, so a lane → test
+# PR got a bogus 'Enforce branch policy: failure' status posted on its commit
+# (PR #485) — merge-gate.yml only governs PRs INTO main.
+BASE_SRC="--base"
+if [ -z "$BASE" ]; then
+  # Same-repo PRs only (a fork PR with the same branch name must not decide);
+  # several open PRs with different bases → main wins (stricter checks).
+  pr_bases="" pr_rc=0
+  pr_bases="$(gh pr list --repo "$NWO" --head "$BRANCH" --state open --limit 5 \
+    --json baseRefName,isCrossRepository -q '.[] | select(.isCrossRepository | not) | .baseRefName' 2>&1)" || pr_rc=$?
+  if [ "$pr_rc" -ne 0 ]; then
+    BASE="main"; BASE_SRC="default — PR lookup failed: $(printf '%s' "$pr_bases" | head -1)"
+  else
+    pr_bases="$(printf '%s\n' "$pr_bases" | awk 'NF' | sort -u)"
+    case "$(printf '%s' "$pr_bases" | grep -c . || true)" in
+      0) BASE="main"; BASE_SRC="default — no open PR for $BRANCH" ;;
+      1) BASE="$pr_bases"; BASE_SRC="open PR for $BRANCH" ;;
+      *) BASE="main"; BASE_SRC="open PRs into several bases ($(printf '%s' "$pr_bases" | tr '\n' ' ')) — main is stricter" ;;
+    esac
+  fi
+fi
+echo "local-ci: head=$BRANCH base=$BASE ($BASE_SRC)"
 
 # Capture this run's full output to a log file so ledger rows can point at it
 # ("gate log tail path") — real evidence behind a posted status, not just an
@@ -239,17 +309,68 @@ if [ "$DRY_RUN" != 1 ]; then
   fi
 fi
 
+# ── Resolve gate execution mode (runner vs ad-hoc docker) ───────────────────
+# The warm self-hosted runner, when one is free, is the env real CI uses — so
+# prefer it for the Node/tsc/vitest/coverage gates (one warm toolchain matching
+# ubuntu-latest). Falls back to today's ad-hoc throwaway containers when there
+# is no free runner, or LOCAL_CI_MODE forces docker. Resolved once; every gate
+# honours it and names its own row's mode. See lib/local_ci_runner.sh.
+# Plain call (NOT "$(...)"): lcr_resolve_mode sets LCR_MODE + LCR_MODE_REASON as
+# globals in THIS shell — a command substitution would lose the reason.
+lcr_resolve_mode "${LCR_RUNNER_CONTAINER:-myai-gh-runner}" "$NWO"
+LCR_STAGED_DIR=""   # memo: the checkout is staged into the runner once per run
+
+# lcr_stage_once — stage SHA's committed tree into the runner EXACTLY once per
+# run (the gates share one checkout). Sets the GLOBAL LCR_STAGED_DIR (callers
+# read it, rather than $(lcr_stage_once) — a command substitution would run in a
+# subshell and the memo would never persist, re-staging per gate). rc 0 on
+# success (dir in LCR_STAGED_DIR), non-zero on failure.
+lcr_stage_once() {
+  [ -n "$LCR_STAGED_DIR" ] && return 0
+  local d
+  d="$(lcr_stage "$REPO_ROOT" "$SHA" "${LCR_RUNNER_CONTAINER:-myai-gh-runner}")" || return 1
+  LCR_STAGED_DIR="$d"
+}
+
 echo "── local-ci ──────────────────────────────────────────────"
 echo "  repo   : $NWO"
 echo "  root   : $REPO_ROOT"
 echo "  branch : $BRANCH"
 echo "  sha    : $SHA"
 echo "  mode   : $([ "$DRY_RUN" = 1 ] && echo 'dry-run (no posting)' || echo 'post on pass')"
+echo "  gates  : $LCR_MODE — $LCR_MODE_REASON"
 echo "──────────────────────────────────────────────────────────"
 
+# ── Blueprint freshness (warn-only, informational) ──────────────────────────
+# Only fires in the master AI repo itself (guarded on templates/blueprint/
+# package.json existing) — a no-op everywhere else, including every project
+# scaffolded from the blueprint. Never touches `overall`/exit code: this is
+# "is the canonical scaffold falling behind npm", not a merge gate.
+if [ -f "$SCRIPT_DIR/blueprint_freshness.sh" ] && [ -f "$REPO_ROOT/templates/blueprint/package.json" ]; then
+  echo "── blueprint freshness (warn-only — template vs npm registry) ─────"
+  bash "$SCRIPT_DIR/blueprint_freshness.sh" || echo "  (non-blocking — see table above; not a merge gate)"
+  echo "─────────────────────────────────────────────────────────────────"
+  echo
+fi
+
 # ── Discover required contexts from branch protection ───────────────────────
-# Authoritative source: exactly the checks blocking a PR to main.
-contexts_json="$(gh api "repos/${NWO}/branches/main/protection/required_status_checks" 2>/dev/null || echo '{}')"
+# Authoritative source: exactly the checks blocking a PR to $BASE.
+# HTTP 404 ("branch not protected") is a legitimate clean no-op; ANY other gh
+# failure (network, auth, rate limit) is a precondition error → exit 2. The
+# old `|| echo '{}'` collapsed both into "nothing to post. Exiting clean." —
+# a network blip produced a green exit 0 that verified nothing, the exact
+# lying-exit-code class this task exists to close (task-44f717c4).
+gh_ctx_rc=0
+contexts_json="$(gh api "repos/${NWO}/branches/${BASE}/protection/required_status_checks" 2>&1)" || gh_ctx_rc=$?
+if [ "$gh_ctx_rc" -ne 0 ]; then
+  if printf '%s' "$contexts_json" | grep -q 'HTTP 404'; then
+    contexts_json='{}'
+  else
+    echo "ERROR: could not query required status checks for ${NWO}:${BASE} — refusing to guess (exit 2, never a green 0)." >&2
+    printf '%s\n' "$contexts_json" | sed 's/^/  gh: /' >&2
+    exit 2
+  fi
+fi
 CONTEXTS=()
 while IFS= read -r line; do
   [ -n "$line" ] && CONTEXTS+=("$line")
@@ -266,20 +387,54 @@ for c in d.get("checks") or []:
 print("\n".join(out))
 ' 2>/dev/null)
 
+# Nothing required on this base (e.g. `test`) → nothing to POST, but the gates
+# still run: a lane→test PR deserves the same local verification. This used to
+# `exit 0` here — and said ":main" whatever the base — so `--base test` ran NO
+# gates at all, the always-run ones included (2026-10-04). Run the default
+# local set instead (each maps to an npm script or is skipped) and post nothing.
+LOCAL_ONLY=0
 if [ "${#CONTEXTS[@]}" -eq 0 ]; then
-  echo "No required status checks on ${NWO}:main — nothing to post. Exiting clean."
-  exit 0
+  LOCAL_ONLY=1
+  CONTEXTS=("Lint" "Type-check" "Test" "build")
+  echo "No required status checks on ${NWO}:${BASE} — nothing to post; running the default local gates anyway: ${CONTEXTS[*]}"
+else
+  echo "Required contexts: ${CONTEXTS[*]}"
 fi
-echo "Required contexts: ${CONTEXTS[*]}"
 echo
 
 # `overall` accumulates failures across every gate below (incl. the §3.4
 # tenant-scoping gate, which is invoked after its definition — see below).
 overall=0
 
+# One-line failure recap, re-printed next to the final RESULT: line. Callers
+# habitually pipe this script through `tail`, which hides per-check FAIL lines
+# hundreds of lines up — that's how a red run got misread live as green.
+FAIL_RECAP=""
+add_fail_recap() { FAIL_RECAP="${FAIL_RECAP}  FAIL: $1"$'\n'; }
+
+# gate_rc <label> <rc> — fold a CRITICAL gate's rc into `overall`.
+# rc 0 = pass; rc 2 = SKIP (gate not applicable on this repo/machine).
+# ANY other rc fails the run — not just 1: rc 3 (docker unavailable) and
+# 126/127 (gate script missing/crashed) mean the gate VERIFIED NOTHING, and
+# the HONESTY CONTRACT forbids turning "could not run" into a green exit.
+gate_rc() {
+  case "$2" in
+    0|2) return 0 ;;
+  esac
+  overall=1
+  add_fail_recap "$1 (rc $2)"
+}
+
 # ── Docker helper (Docker-only policy — no host npm) ────────────────────────
 run_node() {
-  # run_node "<sh command>"  — runs in throwaway node container with repo mounted
+  # run_node "<sh command>"  — run against the repo in a Node environment.
+  # Runner mode: docker exec into the warm gh-runner (staged checkout, no mount).
+  # Docker mode: a throwaway node container with the repo mounted (unchanged).
+  if [ "${LCR_MODE:-docker}" = runner ]; then
+    lcr_stage_once || { echo "    runner staging failed"; return 3; }
+    lcr_exec "$LCR_STAGED_DIR" "$1" "$LCR_RUNNER_CONTAINER"
+    return
+  fi
   command -v docker >/dev/null 2>&1 || { echo "    docker unavailable"; return 3; }
   docker run --rm "${CTR_LIMITS[@]}" -v "$REPO_ROOT":/app -w /app "$NODE_IMAGE" sh -lc "$1"
 }
@@ -308,7 +463,12 @@ repo_build_stage() {
 
 # ── Check runners — each prints detail, returns 0 pass / non-0 fail ─────────
 check_branch_policy() {
-  echo "  [Enforce branch policy] head=$BRANCH"
+  echo "  [Enforce branch policy] head=$BRANCH base=$BASE"
+  if [ "$BASE" != "main" ]; then
+    # SKIP, never PASS: commit statuses are per SHA+context, so a posted success
+    # here could later satisfy main's required check on the same SHA (PR #489 review).
+    echo "    SKIP — n/a: the policy (merge-gate.yml) governs PRs into main only; '$BRANCH' → '$BASE' is allowed"; return 2
+  fi
   if [ "$BRANCH" = "test" ] || [[ "$BRANCH" =~ ^hotfix/ ]]; then
     echo "    PASS — branch '$BRANCH' permitted into main"; return 0
   fi
@@ -393,7 +553,22 @@ check_build() {
     echo "    FAIL — lint/typecheck/test failed in builder image"; return 1
   fi
 
-  # ── Fallback: no Dockerfile builder stage → ephemeral node image w/ devDeps ──
+  # ── Fallback: no Dockerfile builder stage → warm runner / ephemeral node ──
+  # Runner mode runs the chain via docker exec in the warm gh-runner (the CI
+  # TOOLCHAIN container — not the repo's own production image this function
+  # warns against exec-ing into above). Gated on NO DB sidecar: a sidecar means
+  # DB-backed steps need `--network container:<db>`, which docker exec can't add
+  # to the already-running runner — so those stay ad-hoc and say so per row.
+  if [ "${LCR_MODE:-docker}" = runner ] && [ -z "$dbctr" ]; then
+    lcr_stage_once || { echo "    FAIL — runner staging failed"; return 1; }
+    echo "    no builder stage; runner exec $LCR_RUNNER_CONTAINER (npm ci + devDeps): $steps"
+    if lcr_exec "$LCR_STAGED_DIR" "npm ci && $steps" "$LCR_RUNNER_CONTAINER"; then
+      echo "    PASS — build chain green (runner)"; return 0
+    fi
+    echo "    FAIL — build chain failed (runner)"; return 1
+  fi
+  [ -n "$dbctr" ] && [ "${LCR_MODE:-docker}" = runner ] \
+    && echo "    (DB sidecar network required — ad-hoc container, not the runner)"
   echo "    no builder stage; ephemeral $NODE_IMAGE (npm ci + devDeps): $steps"
   # shellcheck disable=SC2086
   if docker run --rm "${CTR_LIMITS[@]}" $netarg $dbenv -v "$REPO_ROOT":/app -w /app "$NODE_IMAGE" sh -lc "npm ci && $steps"; then
@@ -430,11 +605,19 @@ check_npm_script() {
   if [ -n "$stage" ]; then
     local base img; base="$(basename "$REPO_ROOT" | tr '[:upper:]' '[:lower:]')"
     img="localci-verify-${base}:latest"
-    if ! docker image inspect "$img" >/dev/null 2>&1; then
-      echo "    production-faithful build — docker build --target $stage ($img)"
-      DOCKER_BUILDKIT=1 docker build --target "$stage" -t "$img" "$REPO_ROOT" \
-        || { echo "    FAIL — builder-stage image build failed"; return 1; }
-    fi
+    # Rebuild ONCE PER RUN, never "only if missing": an existing tag is a
+    # snapshot of whatever tree last built it, and gating on it posted green
+    # statuses for code the image did not contain (my_biz, 2026-09-29: a
+    # 2-month-old image ran 3 of 5 test files). Layer cache keeps this cheap.
+    case " ${LOCALCI_BUILT_IMAGES:-} " in
+      *" $img "*) ;;
+      *)
+        echo "    production-faithful build — docker build --target $stage ($img)"
+        DOCKER_BUILDKIT=1 docker build --target "$stage" -t "$img" "$REPO_ROOT" \
+          || { echo "    FAIL — builder-stage image build failed"; return 1; }
+        LOCALCI_BUILT_IMAGES="${LOCALCI_BUILT_IMAGES:-} $img"
+        ;;
+    esac
     # shellcheck disable=SC2086
     if docker run --rm "${CTR_LIMITS[@]}" $netarg $dbenv -w /app "$img" sh -lc "npm run $script"; then
       echo "    PASS — npm run $script green (builder image)"; return 0
@@ -442,6 +625,17 @@ check_npm_script() {
     echo "    FAIL — npm run $script failed in builder image"; return 1
   fi
 
+  # Runner mode when no DB sidecar is needed (see check_build for the rationale).
+  if [ "${LCR_MODE:-docker}" = runner ] && [ -z "$dbctr" ]; then
+    lcr_stage_once || { echo "    FAIL — runner staging failed"; return 1; }
+    echo "    no builder stage; runner exec $LCR_RUNNER_CONTAINER (npm ci + devDeps): npm run $script"
+    if lcr_exec "$LCR_STAGED_DIR" "npm ci && npm run $script" "$LCR_RUNNER_CONTAINER"; then
+      echo "    PASS — npm run $script green (runner)"; return 0
+    fi
+    echo "    FAIL — npm run $script failed (runner)"; return 1
+  fi
+  [ -n "$dbctr" ] && [ "${LCR_MODE:-docker}" = runner ] \
+    && echo "    (DB sidecar network required — ad-hoc container, not the runner)"
   echo "    no builder stage; ephemeral $NODE_IMAGE (npm ci + devDeps): npm run $script"
   # shellcheck disable=SC2086
   if docker run --rm "${CTR_LIMITS[@]}" $netarg $dbenv -v "$REPO_ROOT":/app -w /app "$NODE_IMAGE" sh -lc "npm ci && npm run $script"; then
@@ -489,6 +683,20 @@ check_runtime_coverage() {
   python3 -c "import json,sys; sys.exit(0 if 'test:coverage' in json.load(open('$rt/package.json')).get('scripts',{}) else 1)" 2>/dev/null \
     || { echo "    SKIP — no test:coverage script in runtime/package.json"; return 2; }
   command -v docker >/dev/null 2>&1 || { echo "    docker unavailable"; return 3; }
+  # ── Runner mode: docker exec in the warm gh-runner ────────────────────────
+  # The runner is ubuntu 24.04 (glibc, matching ubuntu-latest) with git already
+  # installed — so it needs NEITHER the ad-hoc apt-get git step below NOR the
+  # explicit glibc-image pin: it IS the glibc env, and the whole staged repo is
+  # present so the repo-root fixtures those tests reach up to resolve too.
+  if [ "${LCR_MODE:-docker}" = runner ]; then
+    lcr_stage_once || { echo "    FAIL — runner staging failed"; return 1; }
+    echo "    mode: runner — docker exec $LCR_RUNNER_CONTAINER (glibc, git preinstalled; matches ubuntu-latest)"
+    if lcr_exec "$LCR_STAGED_DIR/runtime" "npm ci && npm run test:coverage" "$LCR_RUNNER_CONTAINER"; then
+      echo "    PASS — coverage thresholds met (runner)"; return 0
+    fi
+    echo "    FAIL — coverage below threshold, or a non-excluded test failed (runner)"; return 1
+  fi
+  # ── Docker mode: ad-hoc glibc node:22 (unchanged) ─────────────────────────
   # Mount the WHOLE repo (not just runtime/) at /app, cwd'd into runtime/ —
   # several tests reach up past runtime/ to repo-root fixtures (e.g.
   # tests/unit/standing-agents.test.ts reads the top-level agents/ dir); a
@@ -497,6 +705,7 @@ check_runtime_coverage() {
   # spawn the CLI through tsx/esbuild, whose musl (alpine) binary segfaults
   # silently to a bare non-zero exit with no stderr, misreported as a coverage
   # regression; a glibc image matches actual CI (ubuntu-latest) and is stable.
+  echo "    mode: docker — ad-hoc node:22 (glibc, deliberately not alpine)"
   if docker run --rm "${CTR_LIMITS[@]}" -v "$REPO_ROOT":/app -w /app/runtime node:22 sh -lc \
       "apt-get update -qq >/dev/null 2>&1 && apt-get install -y -qq git >/dev/null 2>&1; npm ci && npm run test:coverage"; then
     echo "    PASS — coverage thresholds met"; return 0
@@ -515,7 +724,7 @@ check_runtime_coverage() {
 # would let `set -e` abort the whole script before $? is captured, so the gate
 # (and ALL downstream checks) silently never run in every non-gateway repo.
 ts_rc=0; check_tenant_scoping || ts_rc=$?
-if [ "$ts_rc" -eq 1 ]; then overall=1; fi
+gate_rc "tenant-scoping gate (ADR-010 §3.4)" "$ts_rc"
 echo
 
 # ── Tracked-file hygiene gate (commit 4ece268 regression backstop) ──────────
@@ -528,12 +737,19 @@ echo
 # script-unit-tests.yml's ungated `hygiene` job). set -e-safe rc capture.
 check_tracked_hygiene() {
   local rc=0 out=""
+  # [ -f ] guard (same contract as check_capability_counts_gate): this static
+  # gate's script is master-CI tooling and is NOT in update_all's propagation
+  # set, so in a managed repo the propagated local-ci.sh must SKIP (rc 2), not
+  # hard-fail "No such file or directory" (task-e6d1325e — the same
+  # unpropagated-sibling class as ci_check_map.sh/task-29df1165).
+  [ -f "$SCRIPT_DIR/check_tracked_hygiene.sh" ] \
+    || { echo "  SKIP — check_tracked_hygiene.sh not shipped in this repo"; return 2; }
   out="$("$SCRIPT_DIR/check_tracked_hygiene.sh" --repo "$REPO_ROOT" 2>&1)" || rc=$?
   printf '%s\n' "$out" | sed 's/^/  /'
   return "$rc"
 }
 th_rc=0; check_tracked_hygiene || th_rc=$?
-if [ "$th_rc" -eq 1 ]; then overall=1; fi
+gate_rc "tracked-file hygiene gate" "$th_rc"
 echo
 
 # ── Stat-ordering gate (AI_RULES §4 regression backstop) ────────────────────
@@ -545,12 +761,14 @@ echo
 # with script-unit-tests.yml). set -e-safe rc capture.
 check_stat_ordering() {
   local rc=0 out=""
+  [ -f "$SCRIPT_DIR/check_stat_ordering.sh" ] \
+    || { echo "  SKIP — check_stat_ordering.sh not shipped in this repo"; return 2; }
   out="$("$SCRIPT_DIR/check_stat_ordering.sh" --repo "$REPO_ROOT" 2>&1)" || rc=$?
   printf '%s\n' "$out" | sed 's/^/  /'
   return "$rc"
 }
 so_rc=0; check_stat_ordering || so_rc=$?
-if [ "$so_rc" -eq 1 ]; then overall=1; fi
+gate_rc "stat-ordering gate (AI_RULES §4)" "$so_rc"
 echo
 
 # ── Shellcheck gate (baseline-suppressed) ───────────────────────────────────
@@ -563,12 +781,14 @@ echo
 # capture (same reason as the tenant-scoping gate above).
 check_shellcheck_gate() {
   local rc=0 out=""
+  [ -f "$SCRIPT_DIR/check_shellcheck.sh" ] \
+    || { echo "  SKIP — check_shellcheck.sh not shipped in this repo"; return 2; }
   out="$("$SCRIPT_DIR/check_shellcheck.sh" --repo "$REPO_ROOT" 2>&1)" || rc=$?
   printf '%s\n' "$out" | sed 's/^/  /'
   return "$rc"
 }
 shc_rc=0; check_shellcheck_gate || shc_rc=$?
-if [ "$shc_rc" -eq 1 ]; then overall=1; fi
+gate_rc "shellcheck gate" "$shc_rc"
 echo
 
 # ── Bash 3.2 array-safety gate (baseline-suppressed) ────────────────────────
@@ -579,12 +799,14 @@ echo
 # `static-lint` job). set -e-safe rc capture.
 check_bash32_arrays_gate() {
   local rc=0 out=""
+  [ -f "$SCRIPT_DIR/check_bash32_arrays.sh" ] \
+    || { echo "  SKIP — check_bash32_arrays.sh not shipped in this repo"; return 2; }
   out="$("$SCRIPT_DIR/check_bash32_arrays.sh" --repo "$REPO_ROOT" 2>&1)" || rc=$?
   printf '%s\n' "$out" | sed 's/^/  /'
   return "$rc"
 }
 b32_rc=0; check_bash32_arrays_gate || b32_rc=$?
-if [ "$b32_rc" -eq 1 ]; then overall=1; fi
+gate_rc "bash-3.2 array-safety gate" "$b32_rc"
 echo
 
 # ── Capability-count gate (task-70ef2d84) ────────────────────────────────────
@@ -606,13 +828,40 @@ check_capability_counts_gate() {
   return "$rc"
 }
 cc_rc=0; check_capability_counts_gate || cc_rc=$?
-if [ "$cc_rc" -eq 1 ]; then overall=1; fi
+gate_rc "capability-count gate" "$cc_rc"
+echo
+
+# ── Tool-surface gate (task-ffafa43f) ────────────────────────────────────────
+# CRITICAL block, same contract as the gates above: the MCP tool-NAME surface
+# (runtime/src/mcp/tools.ts TOOL_DEFINITIONS) must match the committed
+# scripts/tool_surface_baseline.txt on EVERY local-ci run. Found shipping
+# PR #454 (26db2989): adding two MCP tools required updating FOUR independent
+# guards, and this one — enforced in CI via test_check_tool_surface.sh under
+# the "Shell unit tests (scripts/tests)" check — was the only one local-ci did
+# not run, so --dry-run printed "all required checks satisfied" while the PR's
+# shell-unit-tests check was red. Hermetic (python3 only, <1s). rc 2 = scanner
+# precondition missing (no runtime/src/mcp/tools.ts — a managed repo, not the
+# master) -> SKIP, not FAIL, same as the capability-count gate above. The
+# [ -f ] guard is the unpropagated-sibling protection (task-e6d1325e class).
+# set -e-safe rc capture.
+check_tool_surface_gate() {
+  local rc=0 out=""
+  echo "  [tool surface] TOOL_DEFINITIONS vs scripts/tool_surface_baseline.txt"
+  [ -f "$SCRIPT_DIR/check_tool_surface.sh" ] \
+    || { echo "    SKIP — check_tool_surface.sh not shipped in this repo"; return 2; }
+  out="$(bash "$SCRIPT_DIR/check_tool_surface.sh" --root "$REPO_ROOT" 2>&1)" || rc=$?
+  printf '%s\n' "$out" | sed 's/^/    /'
+  return "$rc"
+}
+tsf_rc=0; check_tool_surface_gate || tsf_rc=$?
+gate_rc "tool-surface gate (baseline)" "$tsf_rc"
 echo
 
 # Same set -e-safe pattern as the tenant-scoping gate above: rc 2 is SKIP (no
-# runtime/ in this repo), rc 1 is a genuine FAIL that must flip `overall`.
+# runtime/ in this repo); any other non-zero rc — incl. 3 "docker unavailable",
+# which previously read as green — must flip `overall` (gate_rc).
 cov_rc=0; check_runtime_coverage || cov_rc=$?
-if [ "$cov_rc" -eq 1 ]; then overall=1; fi
+gate_rc "runtime coverage gate" "$cov_rc"
 echo
 
 # ── Brain token SLO gate (BRAIN W2.4) ────────────────────────────────────────
@@ -668,7 +917,7 @@ sys.exit(0)
 PY
 }
 bts_rc=0; check_brain_token_slo || bts_rc=$?
-if [ "$bts_rc" -eq 1 ]; then overall=1; fi
+gate_rc "brain token SLO gate" "$bts_rc"
 echo
 
 # ── Run required checks (Ready to Merge is an aggregator — evaluate last) ────
@@ -693,7 +942,17 @@ for ctx in "${CONTEXTS[@]}"; do
   case "$ctx" in
     "Ready to Merge") HAS_READY=1; continue ;;
     "Enforce branch policy")
-      if check_branch_policy; then set_result "$ctx" pass; else set_result "$ctx" fail; overall=1; fi ;;
+      if [ "$NO_BRANCH_POLICY" = 1 ]; then
+        echo "  [Enforce branch policy] head=$BRANCH — skipped (--no-branch-policy: PR metadata, not code)"
+        set_result "$ctx" skip
+      else
+        bp_rc=0; check_branch_policy || bp_rc=$?
+        case "$bp_rc" in
+          0) set_result "$ctx" pass ;;
+          2) set_result "$ctx" skip ;;   # n/a for a non-main base — never posted
+          *) set_result "$ctx" fail; overall=1 ;;
+        esac
+      fi ;;
     "Security Audit")
       if check_security_audit; then set_result "$ctx" pass; else set_result "$ctx" fail; overall=1; fi ;;
     "build")
@@ -747,6 +1006,7 @@ post_status() {
     posted=1
   else
     printf '  POST FAILED: %-22s %s\n' "$ctx" "$state"; overall=1
+    add_fail_recap "posting '$ctx' status to GitHub"
   fi
   record_posting "$ctx" "$state" "$posted"
 }
@@ -754,6 +1014,10 @@ post_status() {
 echo "── posting statuses ──────────────────────────────────────"
 for ctx in "${CONTEXTS[@]}"; do
   state="$(get_result "$ctx")"; state="${state:-skip}"
+  if [ "$LOCAL_ONLY" = 1 ]; then
+    echo "  local only (${BASE} requires no checks) — not posted: $ctx $state"
+    continue
+  fi
   case "$state" in
     pass) post_status "$ctx" success "local-ci: passed locally $(date -u +%Y-%m-%dT%H:%M:%SZ)" ;;
     fail) post_status "$ctx" failure "local-ci: failed locally — not merge-ready" ;;
@@ -762,9 +1026,130 @@ for ctx in "${CONTEXTS[@]}"; do
 done
 echo "──────────────────────────────────────────────────────────"
 
+# ── PR-check coverage (honesty report, task-ffafa43f) ────────────────────────
+# Branch protection on main lists ONE required context ("Enforce branch
+# policy") while a PR to main actually runs ~15 check jobs across the
+# pull_request-triggered workflows — so "all required checks satisfied" above
+# is a much narrower claim than "the PR will be green" (found shipping PR #454:
+# local-ci green, "Shell unit tests (scripts/tests)" red). This section derives
+# the real PR check set from .github/workflows/*.yml and names every check this
+# run did NOT verify, and the green RESULT line below is qualified whenever
+# that list is non-empty — the false-confidence class dies here, not in CI.
+# Informational only: it never flips `overall` (a parse failure must not turn
+# a genuinely verified run red), and it degrades to nothing when there are no
+# PR-triggered workflows (managed-repo fixtures, bare repos).
+PR_COV_N=0 PR_COV_TOTAL=0 PR_UNCOVERED=""
+if command -v python3 >/dev/null 2>&1 && [ -d "$REPO_ROOT/.github/workflows" ]; then
+  # Contexts this run actually verified (pass or fail — not skip), one per line.
+  # Env var, not stdin: `python3 -` reads its SCRIPT from stdin (the heredoc).
+  verified_ctxs="$(printf '%s' "$RESULTS" | awk -F'\t' '$1!="skip"{print $2}')"
+  pr_cov_out="$(VERIFIED_CTXS="$verified_ctxs" python3 - "$REPO_ROOT" \
+      "hygiene=$th_rc" "capcounts=$cc_rc" "shellcheck=$shc_rc" "bash32=$b32_rc" \
+      "tenant=$ts_rc" "coverage=$cov_rc" "toolsurface=$tsf_rc" <<'PY' || true
+import glob, os, re, sys
+
+root = sys.argv[1]
+# gate rcs from the run above: rc 2 = SKIP (verified nothing), anything else ran.
+gates = dict(a.split("=", 1) for a in sys.argv[2:])
+gate_ran = {k: v != "2" for k, v in gates.items()}
+verified_ctxs = {l.strip() for l in os.environ.get("VERIFIED_CTXS", "").splitlines() if l.strip()}
+
+# CI job name -> the local gates that verify the same thing. Covered only if
+# EVERY listed gate actually ran (a SKIPped gate verified nothing). Job names
+# not in this map and not matching a verified branch-protection context land
+# in NOT covered — so a future workflow is reported honestly by default.
+GATE_MAP = {
+    "Tracked-file hygiene": ["hygiene"],
+    "Capability counts (docs vs shipped artifacts)": ["capcounts"],
+    "Static lint (shellcheck + bash-3.2 arrays)": ["shellcheck", "bash32"],
+    "ADR-010 §3.4 static gate (forgotten-filter regression backstop)": ["tenant"],
+    # test:coverage runs the full gateway vitest suite, thresholds enforced.
+    "Gateway test suite (incl. tenant-isolation regression + fuzz)": ["coverage"],
+    "Coverage gate (vitest --coverage + thresholds, task-fa7872ba)": ["coverage"],
+}
+HINTS = {
+    "Shell unit tests (scripts/tests)": "run: bash scripts/tests/run_all.sh (hermetic, ~7 min)",
+    "Fleet script smoke harness": "run: bash scripts/tests/fleet_smoke.sh",
+}
+
+checks = []
+paths = sorted(glob.glob(os.path.join(root, ".github", "workflows", "*.yml"))
+               + glob.glob(os.path.join(root, ".github", "workflows", "*.yaml")))
+for path in paths:
+    try:
+        src = open(path, encoding="utf-8").read()
+    except Exception:
+        continue
+    if not re.search(r"(?m)^\s+pull_request:", src):
+        continue
+    jobs_m = re.search(r"(?m)^jobs:\s*$", src)
+    if not jobs_m:
+        continue
+    body = src[jobs_m.end():]
+    starts = [(m.start(), m.group(1)) for m in re.finditer(r"(?m)^  ([A-Za-z0-9_-]+):\s*$", body)]
+    for i, (pos, jid) in enumerate(starts):
+        end = starts[i + 1][0] if i + 1 < len(starts) else len(body)
+        block = body[pos:end]
+        nm = re.search(r"(?m)^    name:\s*(.+?)\s*$", block)
+        name = nm.group(1).strip("\"'") if nm else jid
+        # Path-filter plumbing jobs and jobs whose job-level `if:` gates them
+        # off the PR event (schedule-only sweeps) are not PR merge checks.
+        if re.match(r"Detect .*changes$", name):
+            continue
+        jif = re.search(r"(?m)^    if:\s*(.+?)\s*$", block)
+        if jif and "github.event_name" in jif.group(1) and "pull_request" not in jif.group(1):
+            continue
+        if name not in [c for c, _ in checks]:
+            checks.append((name, os.path.basename(path)))
+
+if checks:
+    covered, uncovered = [], []
+    for name, wf in checks:
+        need = GATE_MAP.get(name)
+        if name in verified_ctxs or (need and all(gate_ran.get(g) for g in need)):
+            covered.append(name)
+        else:
+            uncovered.append(name)
+    print("── PR-check coverage (what this run did NOT verify) ──────")
+    print(f"  a PR to main runs {len(checks)} check job(s) (pull_request-triggered workflows)")
+    if covered:
+        print(f"  verified by this run ({len(covered)}):")
+        for name in covered:
+            print(f"    + {name}")
+    if uncovered:
+        print(f"  NOT verified ({len(uncovered)}) — a green local-ci says NOTHING about these:")
+        for name in uncovered:
+            hint = HINTS.get(name)
+            print(f"    - {name}" + (f" — {hint}" if hint else ""))
+    print("──────────────────────────────────────────────────────────")
+    print("@SUMMARY\t%d\t%d\t%s" % (len(covered), len(checks), "; ".join(uncovered)))
+PY
+)"
+  if [ -n "$pr_cov_out" ]; then
+    printf '%s\n' "$pr_cov_out" | grep -v '^@SUMMARY'
+    summary_line="$(printf '%s\n' "$pr_cov_out" | grep '^@SUMMARY' | head -1)"
+    if [ -n "$summary_line" ]; then
+      PR_COV_N="$(printf '%s' "$summary_line" | awk -F'\t' '{print $2}')"
+      PR_COV_TOTAL="$(printf '%s' "$summary_line" | awk -F'\t' '{print $3}')"
+      PR_UNCOVERED="$(printf '%s' "$summary_line" | awk -F'\t' '{print $4}')"
+    fi
+  fi
+fi
+
 if [ "$overall" -eq 0 ]; then
-  echo "RESULT: all required checks satisfied$([ "$DRY_RUN" = 1 ] && echo ' (dry-run — nothing posted)')."
+  if [ -n "$PR_UNCOVERED" ]; then
+    # Qualified verdict: green here must never read as "the PR will be green".
+    echo "RESULT: all required checks satisfied — but this verified only ${PR_COV_N} of ${PR_COV_TOTAL} PR-to-main checks. NOT covered: ${PR_UNCOVERED}.$([ "$DRY_RUN" = 1 ] && echo ' (dry-run — nothing posted)')"
+  else
+    echo "RESULT: all required checks satisfied$([ "$DRY_RUN" = 1 ] && echo ' (dry-run — nothing posted)')."
+  fi
   exit 0
 fi
+# Recap right above the RESULT line so a `| tail`ed run still names what
+# failed. RESULTS rows are "state<TAB>context"; FAIL_RECAP holds critical-gate
+# and posting failures collected via add_fail_recap.
+echo "Failed (recap — full detail above):"
+printf '%s' "$RESULTS" | awk -F'\t' '$1=="fail"{print "  FAIL: required check \x27" $2 "\x27"}'
+if [ -n "$FAIL_RECAP" ]; then printf '%s' "$FAIL_RECAP"; fi
 echo "RESULT: one or more required checks failed — PR is NOT merge-ready."
 exit 1

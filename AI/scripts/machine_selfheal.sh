@@ -31,6 +31,14 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" 2>/dev/null && pwd) || exit 0
 REPO_ROOT_SH="$(cd "$SCRIPT_DIR/.." 2>/dev/null && pwd)"
 CHANGED=""
 
+# Per-host gateway mem cap (config/stack_limits.txt, keyed by `hostname -s`;
+# compose default 1g). Exported so the gateway split-brain auto-heal (§7 below)
+# `docker compose up -d gateway dashboard` sizes the gateway per host without
+# leaking a host value into .env/Dropbox (mirrors gh_runner_mem.txt).
+# shellcheck source=scripts/lib/stack_limits.sh
+. "$SCRIPT_DIR/lib/stack_limits.sh" 2>/dev/null || true
+export GATEWAY_MEM_LIMIT="${GATEWAY_MEM_LIMIT:-$(resolve_gateway_mem 2>/dev/null)}"
+
 # ── 11. Git-remote SSH→HTTPS auth fallback (LL 2026-07-06/07) ─────────────────
 # Two agentFlow sessions hit "SSH transport was broken on this machine (no
 # key)" after a machine switch to PH11911 and had to hand-flip `origin` to
@@ -568,6 +576,17 @@ if command -v docker >/dev/null 2>&1 && [ -f "$DOCKER_CFG" ] && command -v node 
             fi
         fi
     fi
+fi
+
+# ── 13. Host disk guard (INCIDENT 2026-10-18) ─────────────────────────────────
+# The Data volume filled to 99% while files added up to ~234 GB: an orphaned
+# iOS-Simulator SimRenderServer held a DELETED 592 GB recording open for 16
+# days. scripts/host_disk_guard.sh ends such known-safe orphans, prunes Docker
+# caches when space runs low (never volumes), and reports anything else holding
+# deleted space with the exact fix. Silent when healthy (~1 s). Every session
+# start + the daily 08:00 boot → a runaway file is caught within a day.
+if [ -f "$SCRIPT_DIR/host_disk_guard.sh" ]; then
+    bash "$SCRIPT_DIR/host_disk_guard.sh" 2>/dev/null || true
 fi
 
 [ -n "$CHANGED" ] && echo "machine-selfheal: applied -> $CHANGED"

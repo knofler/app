@@ -34,7 +34,14 @@ fi
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 [ -z "$ROOT" ] && ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/../.." 2>/dev/null && pwd)"
-[ -z "$ROOT" ] && exit 0
+if [ -z "$ROOT" ]; then
+    # Real precondition failure (both git rev-parse and the $0-relative
+    # fallback failed to resolve a root), not "all repos attached" — same
+    # incident class as hooks/session/17-schedule-status.sh. Warn instead of
+    # vanishing silently.
+    echo "26-git-fleet-preflight: cannot resolve repo (not a git repository) — fleet preflight skipped" >&2
+    exit 0
+fi
 
 SCRIPT="$ROOT/scripts/restore_git_metadata.sh"
 [ -f "$SCRIPT" ] || exit 0
@@ -57,8 +64,8 @@ while IFS= read -r line; do
       NAME="" DIR=""
       ;;
     *"container of "*)
-      # Not a repo and never will be — a folder that holds repos (CONTENT_API
-      # holds ph_content_api + ph_content_app). Nothing to fix, so it must not
+      # Not a repo and never will be — a container folder that holds child
+      # repos (e.g. a `services/` dir holding `svc-api` + `svc-web`). Nothing to fix, so it must not
       # reach FINDINGS or the hook cries wolf at every boot.
       NAME="" DIR=""
       ;;

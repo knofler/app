@@ -51,5 +51,10 @@
     "budget_ms": 20000,
     "log_max_lines": 4000,
     "log_keep_lines": 2000
+  },
+
+  "pr_review": {
+    "_comment": "Cost guard for scripts/pr_review_step.sh (documentation/PR_REVIEW_RUBRIC.md, the PR-LANE automated fleet PR review). Before running a headless review, the script estimates the diff's review cost (pr_review_estimate_cost_usd — diff bytes/4 as tokens, priced at the review model's per-million-output rate); if that estimate exceeds max_usd, the run aborts THAT PR with commit status `myai-review=error` and a one-line reason instead of spending anything. Override per-run with PR_REVIEW_MAX_USD.",
+    "max_usd": 0.40
   }
 }

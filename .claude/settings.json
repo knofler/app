@@ -3,7 +3,7 @@
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,
   "permissions": {
-    "defaultMode": "bypassPermissions",
+    "defaultMode": "auto",
     "allow": [
       "Read",
       "Glob",
@@ -198,7 +198,8 @@
       "mcp__github__search_code",
       "mcp__github__search_issues",
       "mcp__github__search_repositories",
-      "mcp__github__search_users"
+      "mcp__github__search_users",
+      "Bash(agy -p:*)"
     ],
     "deny": [
       "Bash(rm -rf /:*)",
@@ -208,6 +209,9 @@
       "Bash(git push -f:*)",
       "Bash(git reset --hard origin:*)",
       "Bash(git clean -fdx:*)",
+      "Bash(gh api -X DELETE:*)",
+      "Bash(gh api --method DELETE:*)",
+      "Bash(gh api --method=DELETE:*)",
       "Bash(dd:*)",
       "Bash(mkfs:*)"
     ]
@@ -376,6 +380,36 @@
             "type": "command",
             "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/29-permission-mode-guard.sh",
             "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/30-auth-guard-status.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/32-local-stack-verify.sh",
+            "timeout": 15000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/33-mailbox-inbox.sh",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/34-collaborator-activity.sh",
+            "timeout": 30000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/35-museum-least-work.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/hook_share/timing/timed_hook.sh ./hooks/session/36-live-session-registry.sh",
+            "timeout": 5000
           },
           {
             "type": "command",
@@ -625,6 +659,11 @@
             "type": "command",
             "command": "./hooks/post-tool/07-brain-observe.sh",
             "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "./hooks/mail-live.sh",
+            "timeout": 6000
           }
         ]
       }
@@ -674,6 +713,18 @@
             "type": "command",
             "command": "./AI/scripts/notify-telegram.sh done",
             "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/mail-live.sh",
+            "timeout": 6000
           }
         ]
       }

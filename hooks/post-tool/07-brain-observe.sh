@@ -33,9 +33,19 @@ set +e
 command -v jq >/dev/null 2>&1 || exit 0
 
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)"
-[ -n "$HOOK_DIR" ] || exit 0
+if [ -z "$HOOK_DIR" ]; then
+    # Real precondition failure — the hook can't resolve its own directory
+    # from $0/BASH_SOURCE. Same class of bug as the pre-fix
+    # hooks/session/18-machine-selfheal.sh (2026-08-27 incident). Warn
+    # instead of vanishing silently.
+    echo "07-brain-observe: cannot resolve own directory from \$0 ($0) — W1.1 observation skipped" >&2
+    exit 0
+fi
 ROOT="$(cd "$HOOK_DIR/../.." 2>/dev/null && pwd)"
-[ -n "$ROOT" ] || exit 0
+if [ -z "$ROOT" ]; then
+    echo "07-brain-observe: cannot resolve repo root from $HOOK_DIR — W1.1 observation skipped" >&2
+    exit 0
+fi
 LIB="$ROOT/scripts/lib/brain.sh"
 [ -f "$LIB" ] || exit 0
 # shellcheck source=../../scripts/lib/brain.sh
@@ -84,7 +94,16 @@ EXIT_STATUS="$(printf '%s' "$INPUT" | jq -r '
   end' 2>/dev/null)"
 case "$EXIT_STATUS" in ok|error) ;; *) EXIT_STATUS="unknown" ;; esac
 
-REPO="$(basename "$ROOT" 2>/dev/null)"
+# brain_repo_name, NOT basename: $ROOT is a per-task worktree
+# (<repo>-task-<uuid>) when the fleet runner is driving, and a raw basename
+# mints a throwaway scratch namespace per task that the atom store (which
+# uses brain_repo_name/slugify — see writeAtom/brain_atom_write) never
+# writes to. That mismatch is exactly what made brain_health's captureCoverage
+# (runtime/src/core/brain-health.ts computeCaptureCoverage) correlate almost
+# every worktree session as "not captured" even when wrap up's brain_commit
+# landed the atom fine under the canonical namespace — the same landmine
+# hooks/stop/05-brain-autoatom.sh already avoids for its own REPO derivation.
+REPO="$(brain_repo_name "$ROOT" 2>/dev/null)"
 [ -n "$REPO" ] || REPO="unknown-repo"
 
 # Session key: prefer the hook-supplied session_id; fall back to an

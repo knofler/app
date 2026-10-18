@@ -177,7 +177,8 @@ if [ "$verdict" = "OVERDUE_EMIT" ]; then
       bdir="$(brain_dir 2>/dev/null)"
       brain_is_repo "$bdir" 2>/dev/null || exit 0
 
-      repo=$(basename "$ROOT")
+      # canonical, worktree-stable (see brain_repo_name in scripts/lib/brain.sh)
+      repo=$(brain_repo_name "$ROOT")
       branch=$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "?")
       session_safe="$(printf '%s' "${SESSION:-unknown}" | tr -c 'A-Za-z0-9_.-' '-')"
       [ -n "$session_safe" ] || exit 0

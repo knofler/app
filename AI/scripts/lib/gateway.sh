@@ -153,3 +153,66 @@ except Exception:
     sys.exit(1)
 ' 2>/dev/null
 }
+
+# ─────────────────────────────────────────────────────────────────────────
+# RUNNER BACKLOG CONSUMED-TITLES LEDGER (task-aa331af6) — durable, unlike a
+# tasks_list(limit:2000) lookup: once a title is confirmed here it stays
+# confirmed forever, regardless of how large the fleet-wide task table grows.
+# Used by scripts/queue_topup.sh's self-heal as a floor the corrected cursor
+# may never rewind past.
+# ─────────────────────────────────────────────────────────────────────────
+
+# gw_backlog_ledger_get [timeout-seconds] → writes confirmed titles to stdout,
+# one per line. Prints nothing and returns 1 on any failure (gateway down,
+# auth fail, malformed response) — callers must treat that as "unknown", not
+# "empty ledger".
+gw_backlog_ledger_get() {
+  local raw
+  raw=$(curl -sf -m "${1:-15}" -X POST http://localhost:3100/mcp \
+    -H 'content-type: application/json' \
+    -H "x-gateway-local-token: ${GATEWAY_LOCAL_TOKEN:-}" \
+    -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"backlog_ledger_get","arguments":{}},"id":1}' 2>/dev/null)
+  [ -z "$raw" ] && return 1
+  printf '%s' "$raw" | /usr/bin/python3 -c 'import sys, json
+try:
+    t = json.load(sys.stdin)["result"]["content"][0]["text"]
+    d = json.loads(t)
+    titles = d["titles"]
+except Exception:
+    sys.exit(1)
+for x in titles:
+    sys.stdout.write(x.replace("\n", " ").replace("\r", " ") + "\n")
+' 2>/dev/null
+}
+
+# gw_backlog_ledger_add <titles-file> [timeout-seconds] → add every non-blank
+# line in titles-file to the ledger (idempotent, set semantics). Best-effort;
+# returns 0 iff the gateway confirmed the write, 1 on any failure (including
+# an empty/missing titles-file, treated as a no-op success).
+gw_backlog_ledger_add() {
+  local titles_file="$1" raw payload
+  [ -s "$titles_file" ] || return 0
+  payload=$(TITLES_FILE="$titles_file" /usr/bin/python3 -c 'import os, json
+titles = []
+with open(os.environ["TITLES_FILE"]) as f:
+    for line in f:
+        line = line.rstrip("\n")
+        if line:
+            titles.append(line)
+print(json.dumps({"jsonrpc": "2.0", "method": "tools/call", "params": {"name": "backlog_ledger_add", "arguments": {"titles": titles}}, "id": 1}, separators=(",", ":")))
+' 2>/dev/null)
+  [ -z "$payload" ] && return 1
+  raw=$(curl -sf -m "${2:-15}" -X POST http://localhost:3100/mcp \
+    -H 'content-type: application/json' \
+    -H "x-gateway-local-token: ${GATEWAY_LOCAL_TOKEN:-}" \
+    -d "$payload" 2>/dev/null)
+  [ -z "$raw" ] && return 1
+  printf '%s' "$raw" | /usr/bin/python3 -c 'import sys, json
+try:
+    t = json.load(sys.stdin)["result"]["content"][0]["text"]
+    d = json.loads(t)
+    sys.exit(0 if "titles" in d else 1)
+except Exception:
+    sys.exit(1)
+' 2>/dev/null
+}

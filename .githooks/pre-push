@@ -1,42 +1,123 @@
 #!/usr/bin/env bash
-# .githooks/pre-push — tracked-file hygiene gate at push time.
+# .githooks/pre-push — tool-agnostic push rails (every AI tool, every human).
 #
-# Commit 4ece268 postmortem: a gutted .gitignore let six machine-local ledgers
-# (state/.*-metrics, state/.telegram-active-host, state/.token-rolling-cache,
-# state/pool-capacity.json) into the index, and they were PUSHED to test before
-# anyone noticed. This hook scans the exact tree of every ref being pushed
-# (scripts/check_tracked_hygiene.sh --ref <sha>) and refuses the push if any
-# denylisted machine-local file is tracked — the last local line of defense
-# before an offender reaches the remote.
+# Two gates, both per pushed ref:
 #
-# Installed via `scripts/install_git_hooks.sh` (sets core.hooksPath=.githooks).
+# 1. MAIN-BLOCK (task-7fd4320e, operator 2026-10-02): the "never push code to
+#    main" rail used to live ONLY in hooks/pre-tool/01-block-push-main.sh — a
+#    Claude Code PreToolUse hook that agy (Antigravity), Codex CLI, Copilot,
+#    mobile git clients and plain terminals never trigger. This git hook is the
+#    same policy enforced where EVERY tool goes through: refuse a push to
+#    main/master unless every changed file in the pushed range is docs-safe
+#    (AI_RULES §17) or — in a MANAGED repo only — a framework-propagation path
+#    (update_all.sh's sync list; the master framework repo gets no such
+#    carve-out, its hooks/scripts must ride test → PR).
+#
+# 2. TRACKED-FILE HYGIENE (commit 4ece268 postmortem): a gutted .gitignore let
+#    six machine-local ledgers (state/.*-metrics, state/.telegram-active-host,
+#    state/.token-rolling-cache, state/pool-capacity.json) into the index, and
+#    they were PUSHED to test before anyone noticed. Scan the exact tree of
+#    every ref being pushed (scripts/check_tracked_hygiene.sh --ref <sha>) and
+#    refuse if any denylisted machine-local file is tracked.
+#
+# Installed via `scripts/install_git_hooks.sh` (sets core.hooksPath=.githooks);
+# boot_sync.sh re-asserts it across every managed repo each boot.
 # Bypass only with `git push --no-verify` — a deliberate, visible choice.
 set -eu
 
 ROOT="$(git rev-parse --show-toplevel)"
 CHECK="$ROOT/scripts/check_tracked_hygiene.sh"
 [ -f "$CHECK" ] || CHECK="$ROOT/AI/scripts/check_tracked_hygiene.sh"
-[ -f "$CHECK" ] || exit 0   # checker not in this clone yet — never break pushes
+
+# Managed layout (framework lives under AI/) vs the master framework repo
+# (cli_task_runner.sh at scripts/ root). Only managed repos get the
+# framework-propagation carve-out below — in master those same paths ARE the
+# code under development and must go through test.
+IS_MASTER=0
+[ -f "$ROOT/scripts/cli_task_runner.sh" ] && IS_MASTER=1
+
+# docs_safe_file <path> — rc 0 when the path can never affect the app
+# (AI_RULES §17 — same list as hooks/pre-tool/01-block-push-main.sh).
+docs_safe_file() {
+    case "$1" in
+        *.md) return 0 ;;
+        state/*|logs/*|docs/*|plan/*|architecture/*|design/*|documentation/*|*/documentation/*) return 0 ;;
+    esac
+    return 1
+}
+
+# propagation_file <path> — rc 0 when the path is part of update_all.sh's
+# framework sync list (the files the master deliberately pushes straight into
+# managed repos). Honored only when IS_MASTER=0.
+propagation_file() {
+    case "$1" in
+        AI/*|hooks/*|.githooks/*|.claude/*|.cursor/*) return 0 ;;
+        .mcp.json|CLAUDE.md|GEMINI.md|AGENTS.md|CONVENTIONS.md|.windsurfrules|.clinerules|.aider.conf.yml) return 0 ;;
+        .github/copilot-instructions.md) return 0 ;;
+    esac
+    return 1
+}
 
 fail=0
 # stdin: "<local_ref> <local_sha> <remote_ref> <remote_sha>" per ref pushed.
-while read -r _lref lsha _rref _rsha; do
+while read -r _lref lsha rref rsha; do
     [ -n "${lsha:-}" ] || continue
     case "$lsha" in
-        *[!0]*) ;;          # real sha — scan it
-        *) continue ;;      # all zeros — branch deletion, nothing to scan
+        *[!0]*) ;;          # real sha — check it
+        *) continue ;;      # all zeros — branch deletion, nothing to check
     esac
-    if ! bash "$CHECK" --repo "$ROOT" --ref "$lsha"; then
-        fail=1
+
+    # ── gate 1: main-block ───────────────────────────────────────────────────
+    case "${rref:-}" in
+        refs/heads/main|refs/heads/master)
+            allowed=1
+            range_files=""
+            case "${rsha:-}" in
+                *[!0]*)
+                    # Remote tip known — the pushed range is exactly rsha..lsha.
+                    if git cat-file -e "$rsha" 2>/dev/null; then
+                        range_files="$(git diff --name-only "$rsha" "$lsha" 2>/dev/null)" || allowed=0
+                    else
+                        allowed=0   # remote tip not local (shallow?) — fail closed
+                    fi
+                    ;;
+                *)
+                    allowed=0       # creating main/master from scratch — fail closed
+                    ;;
+            esac
+            if [ "$allowed" = 1 ] && [ -n "$range_files" ]; then
+                while IFS= read -r f; do
+                    [ -n "$f" ] || continue
+                    docs_safe_file "$f" && continue
+                    if [ "$IS_MASTER" = 0 ] && propagation_file "$f"; then continue; fi
+                    allowed=0
+                    echo "pre-push: '$f' is code — it cannot go directly to ${rref#refs/heads/}" >&2
+                    break
+                done <<EOF
+$range_files
+EOF
+            fi
+            if [ "$allowed" != 1 ]; then
+                {
+                    echo "pre-push: BLOCKED — direct push to ${rref#refs/heads/} (CLAUDE.md rule 1)."
+                    echo "Docs/state/plans may push direct; code goes to 'test' and rides a PR."
+                    echo "Bypass deliberately (billing outage / repo bootstrap): git push --no-verify"
+                } >&2
+                fail=1
+                continue
+            fi
+            ;;
+    esac
+
+    # ── gate 2: tracked-file hygiene ─────────────────────────────────────────
+    if [ -f "$CHECK" ]; then
+        if ! bash "$CHECK" --repo "$ROOT" --ref "$lsha"; then
+            fail=1
+            echo "pre-push: refusing to push machine-local ledgers/state (see FIX above)." >&2
+            echo "Untrack with 'git rm --cached <file>' + commit WITHOUT a pathspec," >&2
+            echo "or bypass deliberately with: git push --no-verify" >&2
+        fi
     fi
 done
 
-if [ "$fail" -ne 0 ]; then
-    {
-        echo "pre-push: refusing to push machine-local ledgers/state (see FIX above)."
-        echo "Untrack with 'git rm --cached <file>' + commit WITHOUT a pathspec,"
-        echo "or bypass deliberately with: git push --no-verify"
-    } >&2
-    exit 1
-fi
-exit 0
+exit "$fail"
